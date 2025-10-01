@@ -1,0 +1,82 @@
+{"properties": [
+  {
+    "name": "mywild.app.name",
+    "type": "java.lang.String",
+    "description": "The application name from Maven."
+  },
+  {
+    "name": "mywild.app.version",
+    "type": "java.lang.String",
+    "description": "The application version from Maven."
+  },
+  {
+    "name": "mywild.app.dev-mode",
+    "type": "java.lang.Boolean",
+    "description": "Whether the server is in development mode or not (dev-mode will show additional logs, etc.)."
+  },
+  {
+    "name": "mywild.jwt.audience",
+    "type": "java.lang.String",
+    "description": "The JWT token audience (aud) claim."
+  },
+  {
+    "name": "mywild.jwt.subject",
+    "type": "java.lang.String",
+    "description": "The JWT token subject (sub) claim."
+  },
+  {
+    "name": "mywild.jwt.issuer",
+    "type": "java.lang.String",
+    "description": "The JWT token issuer (iss) claim."
+  },
+  {
+    "name": "mywild.jwt.access-token-duration",
+    "type": "java.lang.Integer",
+    "description": "The number of minutes the JWT access token is valid for."
+  },
+  {
+    "name": "mywild.jwt.refresh-token-duration",
+    "type": "java.lang.Integer",
+    "description": "The number of minutes the JWT refresh token is valid for."
+  },
+  {
+    "name": "mywild.jwt.key.private",
+    "type": "java.lang.String",
+    "description": "The private key used by the JWT token."
+  },
+  {
+    "name": "mywild.jwt.key.public",
+    "type": "java.lang.String",
+    "description": "The public key used by the JWT token."
+  },
+  {
+    "name": "mywild.cors",
+    "type": "java.lang.String",
+    "description": "The CORS allowed origins."
+  },
+  {
+    "name": "mywild.api-path",
+    "type": "java.lang.String",
+    "description": "The base URL path for the API."
+  },
+  {
+    "name": "mywild.rate.concurrent-users-limit",
+    "type": "java.lang.Integer",
+    "description": "The number of active users per 5 minutes to allow before replying with HTTP Code 429."
+  },
+  {
+    "name": "mywild.rate.user-rate-limit",
+    "type": "java.lang.Integer",
+    "description": "The number of requests per User that can be processed per 5 minutes before replying with HTTP Code 429."
+  },
+  {
+    "name": "mywild.rate.global-rate-limit",
+    "type": "java.lang.Integer",
+    "description": "The number of requests from all Users that can be processed per 5 minutes before replying with HTTP Code 429."
+  },
+  {
+    "name": "mywild.csv.folder",
+    "type": "java.lang.String",
+    "description": "The path to the root folder containing all of the Ambient Weather CSV files to process."
+  }
+]}

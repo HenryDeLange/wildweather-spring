@@ -1,0 +1,326 @@
+openapi: 3.1.0
+info:
+  title: WildWeather API
+  description: "Include <code>'Authorization: Bearer &lt;jwt&gt;'</code> (when authenticated)\
+    \ and <code>'Accept-Language: &lt;code&gt;'</code> in the <b>request header</b>."
+  version: 1.0.0
+externalDocs:
+  description: Download OpenAPI YAML Specification
+  url: /v3/api-docs.yaml
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- bearerAuth: []
+- Accept-Language: []
+tags:
+- name: Application Information
+  description: Version information of the server.
+- name: User Authentication
+  description: "Manage User information, as well as signup and signin."
+- name: Weather
+  description: View past weather from my Ambient Weather stations.
+paths:
+  /api/v1/users/{userId}:
+    get:
+      tags:
+      - User Authentication
+      summary: Find User information based on the provided ID.
+      operationId: getUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserInfo"
+    put:
+      tags:
+      - User Authentication
+      summary: Update User information based on the provided ID.
+      operationId: updateUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+        required: true
+      responses:
+        "200":
+          description: OK
+  /api/v1/users/register:
+    post:
+      tags:
+      - User Authentication
+      summary: Create a new User.
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegister"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Tokens"
+  /api/v1/users/refresh:
+    post:
+      tags:
+      - User Authentication
+      summary: Refresh the User's JWT token.
+      operationId: refreshUser
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Tokens"
+  /api/v1/users/login:
+    post:
+      tags:
+      - User Authentication
+      summary: Check the login credentials of an existing User.
+      operationId: loginUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLogin"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Tokens"
+  /api/v1/weather:
+    get:
+      tags:
+      - Weather
+      summary: Provides the list of all Weather data.
+      operationId: getWeather
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeatherDto"
+  /api/v1/weather/{date}:
+    get:
+      tags:
+      - Weather
+      summary: Provides the list of all Weather data for the specified day.
+      operationId: getWeatherOnDay
+      parameters:
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeatherDto"
+  /api/v1/version/server:
+    get:
+      tags:
+      - Application Information
+      summary: Get server version and Git information.
+      operationId: getServerVersion
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+components:
+  schemas:
+    UserUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+    UserRegister:
+      type: object
+      properties:
+        description:
+          type: string
+        username:
+          type: string
+          maxLength: 2147483647
+          minLength: 4
+        password:
+          type: string
+          minLength: 1
+      required:
+      - password
+      - username
+    Tokens:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        accessToken:
+          type: string
+          minLength: 1
+        refreshToken:
+          type: string
+          minLength: 1
+      required:
+      - accessToken
+      - refreshToken
+      - userId
+    UserLogin:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 2147483647
+          minLength: 4
+        password:
+          type: string
+          maxLength: 2147483647
+          minLength: 4
+      required:
+      - password
+      - username
+    WeatherDto:
+      type: object
+      properties:
+        station:
+          type: string
+          minLength: 1
+        date:
+          type: string
+          format: date
+        category:
+          type: string
+          enum:
+          - L
+          - A
+          - H
+        temperature:
+          type: number
+          format: double
+        windSpeed:
+          type: number
+          format: double
+        windMax:
+          type: number
+          format: double
+        windDirection:
+          type: string
+        rainRate:
+          type: number
+          format: double
+        rainDaily:
+          type: number
+          format: double
+        pressure:
+          type: number
+          format: double
+        humidity:
+          type: number
+          format: double
+        uvRadiationIndex:
+          type: number
+          format: double
+        missing:
+          type: number
+          format: double
+      required:
+      - category
+      - date
+      - humidity
+      - missing
+      - pressure
+      - rainDaily
+      - rainRate
+      - station
+      - temperature
+      - uvRadiationIndex
+      - windDirection
+      - windMax
+      - windSpeed
+    AppVersion:
+      type: object
+      properties:
+        appVersion:
+          type: string
+          minLength: 1
+        branch:
+          type: string
+          minLength: 1
+        commitId:
+          type: string
+          minLength: 1
+        commitTime:
+          type: string
+          minLength: 1
+        buildTime:
+          type: string
+          minLength: 1
+      required:
+      - appVersion
+      - branch
+      - buildTime
+      - commitId
+      - commitTime
+    UserInfo:
+      type: object
+      properties:
+        description:
+          type: string
+        username:
+          type: string
+          maxLength: 2147483647
+          minLength: 4
+        id:
+          type: integer
+          format: int64
+      required:
+      - id
+      - username
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: JWT Access token for authentication.
+      name: bearerAuth
+      scheme: bearer
+      bearerFormat: JWT
+    Accept-Language:
+      type: apiKey
+      description: "Language code for responses. (EN, etc.)"
+      name: Accept-Language
+      in: header
