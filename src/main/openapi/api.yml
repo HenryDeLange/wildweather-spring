@@ -115,7 +115,7 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/Tokens"
-  /api/v1/admin:
+  /api/v1/admin/process-files:
     post:
       tags:
       - Admin
@@ -158,35 +158,13 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/WeatherDto"
-  /api/v1/weather/{date}:
-    get:
-      tags:
-      - Weather
-      summary: "Provides all weather data, for the specified day."
-      operationId: getWeatherOnDay
-      parameters:
-      - name: date
-        in: path
-        required: true
-        schema:
-          type: string
-          format: date
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/WeatherDto"
   /api/v1/weather/{date}/{station}:
     get:
       tags:
       - Weather
-      summary: "Provides all weather data, for the specified day at the specified\
+      summary: "Provides all weather data, for the specified date at the specified\
         \ station."
-      operationId: getWeatherOnDay_1
+      operationId: getStationWeatherOnDay
       parameters:
       - name: date
         in: path

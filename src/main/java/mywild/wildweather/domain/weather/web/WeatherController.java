@@ -28,16 +28,9 @@ public class WeatherController extends BaseController {
         return service.getWeather(startDate, endDate);
     }
 
-    @Operation(summary = "Provides all weather data, for the specified day.")
-    @GetMapping("/weather/{date}")
-    public List<WeatherDto> getWeatherOnDay(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate date) {
-        return service.getWeatherOnDay(date);
-    }
-
-    @Operation(summary = "Provides all weather data, for the specified day at the specified station.")
+    @Operation(summary = "Provides all weather data, for the specified date at the specified station.")
     @GetMapping("/weather/{date}/{station}")
-    public List<WeatherDto> getWeatherOnDay(
+    public List<WeatherDto> getStationWeatherOnDay(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, 
             @PathVariable String station) {
         return service.getStationWeatherOnDay(date, station);

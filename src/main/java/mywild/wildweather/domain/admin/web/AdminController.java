@@ -17,7 +17,7 @@ public class AdminController extends BaseController {
     private WeatherScheduler scheduler;
 
     @Operation(summary = "Manually trigger the processing of CSV files.")
-    @PostMapping("/admin")
+    @PostMapping("/admin/process-files")
     public void triggerCsvProcessing(@RequestParam(required = false) boolean forceFullReload) {
         if (forceFullReload) {
             scheduler.resetProcessedCsvFiles();

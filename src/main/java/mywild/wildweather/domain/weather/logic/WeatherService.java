@@ -21,12 +21,8 @@ public class WeatherService {
         return WeatherMapper.INSTANCE.entityToDtoAsList(repo.findAllWithinDateRange(startDate, endDate));
     }
 
-    public @Valid List<WeatherDto> getWeatherOnDay(@Valid LocalDate date) {
-        return WeatherMapper.INSTANCE.entityToDtoAsList(repo.findAllByDate(date));
-    }
-
     public @Valid List<WeatherDto> getStationWeatherOnDay(@Valid LocalDate date, @NotBlank String station) {
-        return WeatherMapper.INSTANCE.entityToDtoAsList(repo.findAllByDateAndStation(date, station));
+        return WeatherMapper.INSTANCE.entityToDtoAsList(repo.findAllByDateAndStationOrderByDateDescCategoryAsc(date, station));
     }
 
 }

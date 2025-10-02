@@ -1,5 +1,6 @@
 package mywild.wildweather.framework.error;
 
+import org.h2.jdbc.JdbcSQLSyntaxErrorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -55,6 +56,11 @@ public class ErrorConfig {
                         new HttpHeaders(), status, request);
                 }
                 else if (notHandledException instanceof DbActionExecutionException dbException) {
+                    log.error(dbException.getMessage(), dbException);
+                    return handleExceptionInternal(dbException, dbException.getMessage(),
+                        new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+                }
+                else if (notHandledException instanceof JdbcSQLSyntaxErrorException dbException) {
                     log.error(dbException.getMessage(), dbException);
                     return handleExceptionInternal(dbException, dbException.getMessage(),
                         new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
