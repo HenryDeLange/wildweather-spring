@@ -19,6 +19,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
         RabbitAutoConfiguration.class, MongoReactiveAutoConfiguration.class, CassandraAutoConfiguration.class,
         Neo4jAutoConfiguration.class, ErrorMvcAutoConfiguration.class })
 @EnableScheduling
+@EnableAsync
 public class SpringBootApp {
 
     public static void main(String[] args) {

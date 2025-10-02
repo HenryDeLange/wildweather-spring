@@ -19,7 +19,9 @@ tags:
 - name: User Authentication
   description: "Manage User information, as well as signup and signin."
 - name: Weather
-  description: View past weather from my Ambient Weather stations.
+  description: View past weather data from my Ambient Weather stations.
+- name: Admin
+  description: Admin actions.
 paths:
   /api/v1/users/{userId}:
     get:
@@ -113,12 +115,40 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/Tokens"
+  /api/v1/admin:
+    post:
+      tags:
+      - Admin
+      summary: Manually trigger the processing of CSV files.
+      operationId: triggerCsvProcessing
+      parameters:
+      - name: forceFullReload
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
   /api/v1/weather:
     get:
       tags:
       - Weather
-      summary: Provides the list of all Weather data.
+      summary: "Provides all weather data, for the specified (optional) date range."
       operationId: getWeather
+      parameters:
+      - name: startDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: endDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
       responses:
         "200":
           description: OK
@@ -132,7 +162,7 @@ paths:
     get:
       tags:
       - Weather
-      summary: Provides the list of all Weather data for the specified day.
+      summary: "Provides all weather data, for the specified day."
       operationId: getWeatherOnDay
       parameters:
       - name: date
@@ -141,6 +171,34 @@ paths:
         schema:
           type: string
           format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeatherDto"
+  /api/v1/weather/{date}/{station}:
+    get:
+      tags:
+      - Weather
+      summary: "Provides all weather data, for the specified day at the specified\
+        \ station."
+      operationId: getWeatherOnDay_1
+      parameters:
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: station
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           description: OK

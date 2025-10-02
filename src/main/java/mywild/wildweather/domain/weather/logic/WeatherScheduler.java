@@ -12,11 +12,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
@@ -28,20 +30,35 @@ import mywild.wildweather.domain.weather.data.WeatherRepository;
 @Service
 public class WeatherScheduler {
 
-    private final int DELAY = 5 * 1000; // 5 seconds
-    private final int RATE = 60 * 60 * 1000; // 1 hour
+    private final int SCHEDULE_DELAY = 5 * 1000; // 5 seconds
+    private final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour
     private final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // Every 5 minutes
+
+    private final AtomicBoolean isRunning = new AtomicBoolean(false);
+
+    private final List<String> processedCsvFiles = new ArrayList<>();
 
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;
 
     @Autowired
     private WeatherRepository repo;
-
-    private List<String> processedCsvFiles = new ArrayList<>();
     
-    @Scheduled(initialDelay = DELAY, fixedRate = RATE)
+    @Scheduled(initialDelay = SCHEDULE_DELAY, fixedRate = SCHEDULE_RATE)
+    void scheduledCsvFilesProcessing() {
+        processCsvFiles();
+    }
+
+    public void resetProcessedCsvFiles() {
+        processedCsvFiles.clear();
+    }
+
+    @Async
     public void processCsvFiles() {
+        if (!isRunning.compareAndSet(false, true)) {
+            log.warn("Already busy processing files... The new request will be ignored.");
+            return;
+        }
         try (Stream<Path> paths = Files.walk(Paths.get(csvRootFolder))) {
             log.info("*************************");
             log.info("Looking for CSV files in: {}", csvRootFolder);
@@ -53,7 +70,8 @@ public class WeatherScheduler {
                 .toList();
             List<Path> fineScaleCsvFiles = new ArrayList<>();
             csvFiles.forEach(csvFile -> {
-                if (!processSummaryCsv(csvFile)) {
+                var isSummaryFile = processSummaryCsv(csvFile);
+                if (!isSummaryFile) {
                     fineScaleCsvFiles.add(csvFile);
                 }
             });
@@ -62,19 +80,24 @@ public class WeatherScheduler {
         catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
-        log.info("***************************");
-        log.info("Processed all CSV files in: {}", csvRootFolder);
-        log.info("***************************");
+        finally {
+            log.info("***************************");
+            log.info("Processed all CSV files in: {}", csvRootFolder);
+            log.info("***************************");
+            isRunning.set(false);
+        }
     }
 
     private boolean processSummaryCsv(Path csvFile) {
         var fileName = csvFile.getParent().getParent().relativize(csvFile).toString();
+        log.info("----------------");
+        log.info("Processing File: {}", fileName);
+        var newRecords = 0;
+        var duplicates = 0;
+        var warnings = 0;
+        var errors = 0;
         try (var reader = Files.newBufferedReader(csvFile)) {
-            log.info("----------------");
-            log.info("Processing File: {}", fileName);
-            
             String[] headers = getHeaders(reader);
-
             var isSummaryCsv = headers[0].equals("col0");
             if (isSummaryCsv) {
                 List<CSVRecord> records = getRecords(reader, headers);
@@ -85,6 +108,15 @@ public class WeatherScheduler {
                             var category = WeatherCategory.valueOf(categoryRecord.substring(0, 1));
                             var date = LocalDate.parse(record.get("Date"));
                             var station = csvFile.getParent().getFileName().toString();
+                            var temperature = Double.parseDouble(record.get("Outdoor Temperature"));
+                            var windSpeed = Double.parseDouble(record.get("Wind Speed"));
+                            var windMax = Double.parseDouble(record.get("Max Daily Gust"));
+                            var windDirection = record.get("Wind Direction");
+                            var rainRate = Double.parseDouble(record.get("Rain Rate"));
+                            var rainDaily = Double.parseDouble(record.get("Daily Rain"));
+                            var pressure = Double.parseDouble(record.get("Relative Pressure"));
+                            var humidity = Double.parseDouble(record.get("Humidity"));
+                            var uvRadiationIndex = Double.parseDouble(record.get("Ultra-Violet Radiation Index"));
                             var entity = repo.findByDateAndStationAndCategory(date, station, category);
                             if (entity == null) {
                                 repo.save(
@@ -92,42 +124,74 @@ public class WeatherScheduler {
                                         .station(station)
                                         .date(date)
                                         .category(category)
-                                        .temperature(Double.parseDouble(record.get("Outdoor Temperature")))
-                                        .windSpeed(Double.parseDouble(record.get("Wind Speed")))
-                                        .windMax(Double.parseDouble(record.get("Max Daily Gust")))
-                                        .windDirection(record.get("Wind Direction"))
-                                        .rainRate(Double.parseDouble(record.get("Rain Rate")))
-                                        .rainDaily(Double.parseDouble(record.get("Daily Rain")))
-                                        .pressure(Double.parseDouble(record.get("Relative Pressure")))
-                                        .humidity(Double.parseDouble(record.get("Humidity")))
-                                        .uvRadiationIndex(Double.parseDouble(record.get("Ultra-Violet Radiation Index")))
+                                        .temperature(temperature)
+                                        .windSpeed(windSpeed)
+                                        .windMax(windMax)
+                                        .windDirection(windDirection)
+                                        .rainRate(rainRate)
+                                        .rainDaily(rainDaily)
+                                        .pressure(pressure)
+                                        .humidity(humidity)
+                                        .uvRadiationIndex(uvRadiationIndex)
                                         .missing(0)
                                     .build()
                                 );
+                                newRecords++;
                             }
                             else {
-                                // TODO: else compare to make sure values match, otherwise log warning
-                                log.trace("Duplicate: {} - {} - {}", station, date, category);
+                                if (entity.getTemperature() == temperature
+                                        || entity.getWindSpeed() == windSpeed
+                                        || entity.getWindMax() == windMax
+                                        || entity.getWindDirection() == windDirection
+                                        || entity.getRainRate() == rainRate
+                                        || entity.getRainDaily() == rainDaily
+                                        || entity.getPressure() == pressure
+                                        || entity.getHumidity() == humidity
+                                        || entity.getUvRadiationIndex() == uvRadiationIndex) { 
+                                    log.trace("Ignore Duplicate: {} - {} - {}", station, date, category);
+                                    duplicates++;
+                                }
+                                else {
+                                    log.warn("Inconsistent Duplicate!");
+                                    log.warn("   Entity: {}", entity);
+                                    log.warn("   Record: {}", record);
+                                    warnings++;
+                                }
                             }
                         }
                     }
+                    catch (NumberFormatException ex) {
+                        log.trace("Could not process record due to number format error.");
+                        log.trace("   CSV File : {}", fileName);
+                        log.trace("   Headers  : {}", Arrays.toString(headers));
+                        log.trace("   Record   : {}", record.toString());
+                        log.trace(ex.getMessage());
+                        log.trace(ex.getMessage(), ex);
+                        warnings++;
+                    }
                     catch (Exception ex) {
                         log.error("Could not process record!");
-                        log.error(Arrays.toString(headers));
-                        log.error(record.toString());
+                        log.error("   CSV File : {}", fileName);
+                        log.error("   Headers  : {}", Arrays.toString(headers));
+                        log.error("   Record   : {}", record.toString());
                         log.error(ex.getMessage(), ex);
+                        errors++;
                     }
                 }
             }
             else {
-                log.info("Delay fine scale file until all summary files have been processed: {}", fileName);
+                log.info(" > Delaying fine scale file until all summary files have been processed...");
                 return false;
             }
         }
         catch (Exception ex) {
             log.error(ex.getMessage(), ex);
+            errors++;
         }
-        // Mark as processed
+        log.info("   New Records: {}", newRecords);
+        log.info("   Duplicates : {}", duplicates);
+        log.info("   Warnings   : {}", warnings);
+        log.info("   Errors     : {}", errors);
         processedCsvFiles.add(fileName);
         return true;
     }
