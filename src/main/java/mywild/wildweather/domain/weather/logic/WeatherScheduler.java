@@ -9,13 +9,21 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
+import org.slf4j.helpers.MessageFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -33,6 +41,8 @@ public class WeatherScheduler {
     private final int SCHEDULE_DELAY = 5 * 1000; // 5 seconds
     private final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour
     private final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // Every 5 minutes
+
+    private final Object lock = new Object();
 
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -60,50 +70,65 @@ public class WeatherScheduler {
             return;
         }
         try (Stream<Path> paths = Files.walk(Paths.get(csvRootFolder))) {
-            log.info("*************************");
-            log.info("Looking for CSV files in: {}", csvRootFolder);
-            log.info("*************************");
-            List<Path> csvFiles = paths
-                .filter(Files::isRegularFile)
-                .filter(path -> path.toString().toLowerCase().endsWith(".csv"))
-                .filter(path -> !processedCsvFiles.contains(getCsvName(path)))
-                .toList();
-            List<Path> fineScaleCsvFiles = new ArrayList<>();
-            csvFiles.forEach(csvFile -> {
-                var isSummaryFile = processSummaryCsv(csvFile);
-                if (!isSummaryFile) {
-                    fineScaleCsvFiles.add(csvFile);
-                }
-            });
-            processFineScaleFile(fineScaleCsvFiles);
+            log.info("**************************");
+            log.info("Looking for CSV files in : {}", csvRootFolder);
+            log.info("**************************");
+            List<Path> fineScaleCsvFiles = processAllSummaryFiles(paths);
+            processAllFineScaleFiles(fineScaleCsvFiles);
         }
         catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
         finally {
-            log.info("***************************");
-            log.info("Processed all CSV files in: {}", csvRootFolder);
-            log.info("***************************");
+            log.info("****************************");
+            log.info("Processed all CSV files in : {}", csvRootFolder);
+            log.info("****************************");
             isRunning.set(false);
         }
     }
 
-    private boolean processSummaryCsv(Path csvFile) {
-        var fileName = csvFile.getParent().getParent().relativize(csvFile).toString();
-        log.info("----------------");
-        log.info("Processing File: {}", fileName);
+    private List<Path> processAllSummaryFiles(Stream<Path> paths) throws InterruptedException {
+        List<Path> csvFiles = paths
+            .filter(Files::isRegularFile)
+            .filter(path -> path.toString().toLowerCase().endsWith(".csv"))
+            .filter(path -> !processedCsvFiles.contains(getCsvName(path)))
+            .toList();
+        List<Path> fineScaleCsvFiles = Collections.synchronizedList(new ArrayList<>());
+        List<Callable<Void>> tasks = new ArrayList<>();
+        csvFiles.forEach(csvFile -> {
+            tasks.add(() -> {
+                var isSummaryFile = processSummaryFile(csvFile);
+                if (!isSummaryFile) {
+                    fineScaleCsvFiles.add(csvFile);
+                }
+                return null;
+            });
+        });
+        ExecutorService executor = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors(),
+            new CsvThreadFactory("s-csv-"));
+        executor.invokeAll(tasks);
+        executor.shutdown();
+        return fineScaleCsvFiles;
+    }
+
+    private boolean processSummaryFile(Path csvFile) {
+        StringBuilder logBuilder = new StringBuilder();
+        var csvName = getCsvName(csvFile);
+        logBuilder.append("----------------").append(System.lineSeparator());
+        logBuilder.append(MessageFormatter.format("Processing File : {}", csvName).getMessage()).append(System.lineSeparator());
         var newRecords = 0;
         var duplicates = 0;
         var warnings = 0;
         var errors = 0;
         try (var reader = Files.newBufferedReader(csvFile)) {
             String[] headers = getHeaders(reader);
-            var isSummaryCsv = headers[0].equals("col0");
+            var isSummaryCsv = headers[0].equals("COL0");
             if (isSummaryCsv) {
                 List<CSVRecord> records = getRecords(reader, headers);
                 for (CSVRecord record : records) {
                     try {
-                        var categoryRecord = record.get("col0");
+                        var categoryRecord = record.get("COL0");
                         if (!categoryRecord.contains("Datetime")) {
                             var category = WeatherCategory.valueOf(categoryRecord.substring(0, 1));
                             var date = LocalDate.parse(record.get("Date"));
@@ -117,52 +142,55 @@ public class WeatherScheduler {
                             var pressure = Double.parseDouble(record.get("Relative Pressure"));
                             var humidity = Double.parseDouble(record.get("Humidity"));
                             var uvRadiationIndex = Double.parseDouble(record.get("Ultra-Violet Radiation Index"));
-                            var entity = repo.findByDateAndStationAndCategory(date, station, category);
-                            if (entity == null) {
-                                repo.save(
-                                    WeatherEntity.builder()
-                                        .station(station)
-                                        .date(date)
-                                        .category(category)
-                                        .temperature(temperature)
-                                        .windSpeed(windSpeed)
-                                        .windMax(windMax)
-                                        .windDirection(windDirection)
-                                        .rainRate(rainRate)
-                                        .rainDaily(rainDaily)
-                                        .pressure(pressure)
-                                        .humidity(humidity)
-                                        .uvRadiationIndex(uvRadiationIndex)
-                                        .missing(0)
-                                    .build()
-                                );
-                                newRecords++;
-                            }
-                            else {
-                                if (entity.getTemperature() == temperature
-                                        || entity.getWindSpeed() == windSpeed
-                                        || entity.getWindMax() == windMax
-                                        || entity.getWindDirection() == windDirection
-                                        || entity.getRainRate() == rainRate
-                                        || entity.getRainDaily() == rainDaily
-                                        || entity.getPressure() == pressure
-                                        || entity.getHumidity() == humidity
-                                        || entity.getUvRadiationIndex() == uvRadiationIndex) { 
-                                    log.trace("Ignore Duplicate: {} - {} - {}", station, date, category);
-                                    duplicates++;
+                            // TODO: Maybe better to build a map in memory and then save the map once-off after all the tasks are done
+                            synchronized (lock) {
+                                var entity = repo.findByDateAndStationAndCategory(date, station, category);
+                                if (entity == null) {
+                                    repo.save(
+                                        WeatherEntity.builder()
+                                            .station(station)
+                                            .date(date)
+                                            .category(category)
+                                            .temperature(temperature)
+                                            .windSpeed(windSpeed)
+                                            .windMax(windMax)
+                                            .windDirection(windDirection)
+                                            .rainRate(rainRate)
+                                            .rainDaily(rainDaily)
+                                            .pressure(pressure)
+                                            .humidity(humidity)
+                                            .uvRadiationIndex(uvRadiationIndex)
+                                            .missing(0)
+                                        .build()
+                                    );
+                                    newRecords++;
                                 }
                                 else {
-                                    log.warn("Inconsistent Duplicate!");
-                                    log.warn("   Entity: {}", entity);
-                                    log.warn("   Record: {}", record);
-                                    warnings++;
+                                    if (entity.getTemperature() == temperature
+                                            || entity.getWindSpeed() == windSpeed
+                                            || entity.getWindMax() == windMax
+                                            || entity.getWindDirection() == windDirection
+                                            || entity.getRainRate() == rainRate
+                                            || entity.getRainDaily() == rainDaily
+                                            || entity.getPressure() == pressure
+                                            || entity.getHumidity() == humidity
+                                            || entity.getUvRadiationIndex() == uvRadiationIndex) { 
+                                        log.trace("Ignore Duplicate : {} - {} - {}", station, date, category);
+                                        duplicates++;
+                                    }
+                                    else {
+                                        logBuilder.append("Inconsistent Duplicate!").append(System.lineSeparator());
+                                        logBuilder.append(MessageFormatter.format("   Entity : {}", entity).getMessage()).append(System.lineSeparator());
+                                        logBuilder.append(MessageFormatter.format("   Record : {}", record).getMessage()).append(System.lineSeparator());
+                                        warnings++;
+                                    }
                                 }
                             }
                         }
                     }
                     catch (NumberFormatException ex) {
                         log.trace("Could not process record due to number format error.");
-                        log.trace("   CSV File : {}", fileName);
+                        log.trace("   CSV File : {}", csvName);
                         log.trace("   Headers  : {}", Arrays.toString(headers));
                         log.trace("   Record   : {}", record.toString());
                         log.trace(ex.getMessage());
@@ -171,7 +199,7 @@ public class WeatherScheduler {
                     }
                     catch (Exception ex) {
                         log.error("Could not process record!");
-                        log.error("   CSV File : {}", fileName);
+                        log.error("   CSV File : {}", csvName);
                         log.error("   Headers  : {}", Arrays.toString(headers));
                         log.error("   Record   : {}", record.toString());
                         log.error(ex.getMessage(), ex);
@@ -180,7 +208,7 @@ public class WeatherScheduler {
                 }
             }
             else {
-                log.info(" > Delaying fine scale file until all summary files have been processed...");
+                logBuilder.append("   > Delaying fine scale file until all summary files have been processed...").append(System.lineSeparator());
                 return false;
             }
         }
@@ -188,72 +216,98 @@ public class WeatherScheduler {
             log.error(ex.getMessage(), ex);
             errors++;
         }
-        log.info("   New Records: {}", newRecords);
-        log.info("   Duplicates : {}", duplicates);
-        log.info("   Warnings   : {}", warnings);
-        log.info("   Errors     : {}", errors);
-        processedCsvFiles.add(fileName);
+        logBuilder.append(MessageFormatter.format("   New Records : {}", newRecords).getMessage()).append(System.lineSeparator());
+        logBuilder.append(MessageFormatter.format("   Duplicates  : {}", duplicates).getMessage()).append(System.lineSeparator());
+        logBuilder.append(MessageFormatter.format("   Warnings    : {}", warnings).getMessage()).append(System.lineSeparator());
+        logBuilder.append(MessageFormatter.format("   Errors      : {}", errors).getMessage()).append(System.lineSeparator());
+        log.info(logBuilder.toString());
+        processedCsvFiles.add(csvName);
         return true;
     }
 
-    private void processFineScaleFile(List<Path> csvFiles) {
-        List<String> detectDuplicateRecords = new ArrayList<>();
-        Map<RecordsPerDateKey, Integer> recordsPerDate = new HashMap<>();
+    private void processAllFineScaleFiles(List<Path> csvFiles) throws InterruptedException {
+        Set<String> detectDuplicateRecords = ConcurrentHashMap.newKeySet();
+        ConcurrentMap<RecordsPerDateKey, Integer> recordsPerDate = new ConcurrentHashMap<>();
+        List<Callable<Void>> tasks = new ArrayList<>();
         for (var csvFile : csvFiles) {
-            var fileName = getCsvName(csvFile);
-            try (var reader = Files.newBufferedReader(csvFile)) {
-                log.info("----------------");
-                log.info("Processing Delayed Fine Scale File: {}", fileName);
-
-                String[] headers = getHeaders(reader);
-                
-                ZonedDateTime prevDateTime = null;
-
-                List<CSVRecord> records = getRecords(reader, headers);
-                for (CSVRecord record : records) {
-                    var dateTime = ZonedDateTime.parse(record.get("Date"));
-                    var date = dateTime.toLocalDate();
-                    var station = csvFile.getParent().getFileName().toString();
-                    var duplicateKey = station + "_" + record.get("Date");
-                    if (!detectDuplicateRecords.contains(duplicateKey)) {
-                        // The CSV file's dates should be in descending order (every 5 mins), thus it is possible to easily detect gaps
-                        if (prevDateTime == null || dateTime.plusMinutes(9).isAfter(prevDateTime)) {
-                            recordsPerDate.compute(new RecordsPerDateKey(station, date), (k, v) -> v == null ? 1 : v + 1);
-                            detectDuplicateRecords.add(duplicateKey);
-                            log.trace("Date Time Counted: Prev {} vs Current {}", prevDateTime, dateTime);
-                        }
-                        else {
-                            log.trace("Date Time Gap: Prev {} vs Current {}", prevDateTime, dateTime);
+            tasks.add(() -> {
+                var csvName = getCsvName(csvFile);
+                var newRecords = 0;
+                var duplicates = 0;
+                var gaps = 0;
+                var errors = 0;
+                try (var reader = Files.newBufferedReader(csvFile)) {
+                    StringBuilder logBuilder = new StringBuilder();
+                    logBuilder.append("----------------").append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("Processing Delayed Fine Scale File : {}", csvName).getMessage()).append(System.lineSeparator());
+                    try {
+                        String[] headers = getHeaders(reader);
+                        ZonedDateTime prevDateTime = null;
+                        // TODO: Maybe just use normal file reading, line by line (only first 25 chars are needed), might be faster / less memory?
+                        for (CSVRecord record : getRecords(reader, headers)) {
+                            var dateTime = ZonedDateTime.parse(record.get("Date"));
+                            var date = dateTime.toLocalDate();
+                            var station = csvFile.getParent().getFileName().toString();
+                            var duplicateKey = station + "_" + record.get("Date");
+                            if (!detectDuplicateRecords.contains(duplicateKey)) {
+                                // The CSV file's dates should be in descending order (every 5 mins), thus it is possible to easily detect gaps
+                                if (prevDateTime == null || dateTime.plusMinutes(9).isAfter(prevDateTime)) {
+                                    recordsPerDate.compute(new RecordsPerDateKey(station, date), (k, v) -> v == null ? 1 : v + 1);
+                                    detectDuplicateRecords.add(duplicateKey);
+                                    newRecords++;
+                                }
+                                else {
+                                    log.trace("Large time gap : Prev {} vs Current {}", prevDateTime, dateTime);
+                                    gaps++;
+                                }
+                            }
+                            else {
+                                log.trace("Duplicate: {}", duplicateKey);
+                                duplicates++;
+                            }
+                            prevDateTime = dateTime;
                         }
                     }
-                    else {
-                        // TODO: else compare to make sure values match, otherwise log warning
-                        log.trace("Duplicate: {} - {}", station, date);
+                    catch (Exception ex) {
+                        log.error(ex.getMessage(), ex);
+                        errors++;
                     }
-                    prevDateTime = dateTime;
+                    logBuilder.append(MessageFormatter.format("   Processed  : {}", newRecords).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("   Duplicates : {}", duplicates).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("   Gaps       : {}", gaps).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("   Errors     : {}", errors).getMessage()).append(System.lineSeparator());
+                    log.info(logBuilder.toString());
+                }
+                processedCsvFiles.add(csvName);
+                return null;
+            });
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors(), 
+            new CsvThreadFactory("f-csv-"));
+        executor.invokeAll(tasks);
+        executor.shutdown();
+
+        if (!recordsPerDate.entrySet().isEmpty()) {
+            log.info("----------------");
+            log.info("Updating database entities to flag dates with missing CSV records...");
+            var updated = 0;
+            for (var entry : recordsPerDate.entrySet()) {
+                try {
+                    var entities = repo.findAllByDateAndStation(entry.getKey().date, entry.getKey().station);
+                    entities.forEach(temp -> {
+                        if (temp.getDate().equals(entry.getKey().date)) {
+                            temp.setMissing(EXPECTED_RECORDS_PER_DAY - entry.getValue());
+                        }
+                    });
+                    repo.saveAll(entities);
+                    updated = updated + entities.size();
+                }
+                catch (Exception ex) {
+                    log.error(ex.getMessage(), ex);
                 }
             }
-            catch (Exception ex) {
-                log.error(ex.getMessage(), ex);
-            }
-            // Mark as processed
-            processedCsvFiles.add(fileName);
-        }
-        log.info("----------------");
-        log.info("Updating database records to flag dates with missing CSV entries...");
-        for (var entry : recordsPerDate.entrySet()) {
-            try {
-                var entities = repo.findAllByDateAndStation(entry.getKey().date, entry.getKey().station);
-                entities.forEach(temp -> {
-                    if (temp.getDate().equals(entry.getKey().date)) {
-                        temp.setMissing(EXPECTED_RECORDS_PER_DAY - entry.getValue());
-                    }
-                });
-                repo.saveAll(entities);
-            }
-            catch (Exception ex) {
-                log.error(ex.getMessage(), ex);
-            }
+            log.info("   Updated : {}", updated);
         }
     }
 
@@ -264,7 +318,7 @@ public class WeatherScheduler {
             var header = headers[i].replace("\"", "");
             if (header == null || header.isBlank()) {
                 // Replace empty headers with the column index instead
-                header = "col" + i;
+                header = "COL" + i;
             }
             if (header.contains("(")) {
                 header = header.substring(0, header.indexOf("(")).trim();
@@ -292,7 +346,7 @@ public class WeatherScheduler {
     }
 
     private String getCsvName(Path path) {
-        return path.getParent().getParent().relativize(path).toString();
+        return path.getParent().getFileName() + " -> " + path.getFileName();
     }
 
     private record RecordsPerDateKey(
@@ -301,6 +355,23 @@ public class WeatherScheduler {
     ) {
        // Record automatically generates: equals, hashCode and toString
     };
+
+    private class CsvThreadFactory implements ThreadFactory {
+        
+        private final AtomicInteger counter = new AtomicInteger(1);
+
+        private final String name;
+
+        CsvThreadFactory(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Thread newThread(Runnable runnable) {
+            return new Thread(runnable, String.format(name + "%02d", counter.getAndIncrement()));
+        }
+
+    }
 
 }
 
