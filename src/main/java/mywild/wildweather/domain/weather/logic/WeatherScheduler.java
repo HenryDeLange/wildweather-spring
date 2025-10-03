@@ -60,6 +60,7 @@ public class WeatherScheduler {
     }
 
     public void resetProcessedCsvFiles() {
+        repo.deleteAll();
         processedCsvFiles.clear();
     }
 
@@ -294,7 +295,7 @@ public class WeatherScheduler {
             var updated = 0;
             for (var entry : recordsPerDate.entrySet()) {
                 try {
-                    var entities = repo.findAllByDateAndStationOrderByDateDescCategoryAsc(entry.getKey().date, entry.getKey().station);
+                    var entities = repo.findAllByDateAndStationOrderByDateAscCategoryAsc(entry.getKey().date, entry.getKey().station);
                     entities.forEach(temp -> {
                         if (temp.getDate().equals(entry.getKey().date)) {
                             temp.setMissing(EXPECTED_RECORDS_PER_DAY - entry.getValue());

@@ -15,9 +15,9 @@ public class HeaderInterceptor implements HandlerInterceptor {
     public boolean preHandle(@NonNull HttpServletRequest req, @NonNull HttpServletResponse rsp, @NonNull Object handler) throws Exception {
         String acceptLanguage = req.getHeader("Accept-Language");
         String encoding = req.getHeader("Accept-Encoding");
-        log.debug("Request URL    : {}", req.getRequestURI());
-        log.debug("Request Header : Accept-Language = {}", acceptLanguage);
-        log.debug("Request Header : Accept-Encoding = {}", encoding);
+        log.trace("Request URL    : {}", req.getRequestURI());
+        log.trace("Request Header : Accept-Language = {}", acceptLanguage);
+        log.trace("Request Header : Accept-Encoding = {}", encoding);
         return true;
     }
 

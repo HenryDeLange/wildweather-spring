@@ -7,22 +7,34 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
-
 @Repository
 public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
 
     @Query("""
         SELECT *
         FROM "weather" w
-        WHERE (:startDate IS NULL OR w.date >= :startDate)
+        WHERE
+        (:station IS NULL OR w.station = :station)
+        AND (:startDate IS NULL OR w.date >= :startDate)
         AND (:endDate IS NULL OR w.date <= :endDate)
-        ORDER BY w.date, w.station, w.category
+        AND (:startMonth IS NULL OR MONTH(w.date) >= :startMonth)
+        AND (:endMonth IS NULL OR MONTH(w.date) <= :endMonth)
+        ORDER BY w.date ASC, w.station ASC, w.category ASC
         """)
-    List<WeatherEntity> findAllWithinDateRange(
-        @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    List<WeatherEntity> searchWeather(
+        @Param("station") String station,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
+        @Param("startMonth") Integer startMonth,
+        @Param("endMonth") Integer endMonth);
 
-    List<WeatherEntity> findAllByDateAndStationOrderByDateDescCategoryAsc(LocalDate date, String station);
+    List<WeatherEntity> findAllByDateAndStationOrderByDateAscCategoryAsc(
+        LocalDate date,
+        String station);
     
-    WeatherEntity findByDateAndStationAndCategory(LocalDate date, String station, WeatherCategory category);
+    WeatherEntity findByDateAndStationAndCategory(
+        LocalDate date,
+        String station,
+        WeatherCategory category);
 
 }

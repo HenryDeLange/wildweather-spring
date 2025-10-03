@@ -14,7 +14,7 @@ import mywild.wildweather.framework.security.jwt.JwtUtils;
 import mywild.wildweather.framework.web.BaseController;
 import mywild.wildweather.user.logic.UserService;
 
-@Tag(name = "User Authentication", description = "Manage User information, as well as signup and signin.")
+@Tag(name = "Users", description = "User authentication and identity management.")
 @RestController
 public class UserController extends BaseController {
 

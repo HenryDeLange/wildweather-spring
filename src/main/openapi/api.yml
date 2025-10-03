@@ -16,17 +16,17 @@ security:
 tags:
 - name: Application Information
   description: Version information of the server.
-- name: User Authentication
-  description: "Manage User information, as well as signup and signin."
 - name: Weather
-  description: View past weather data from my Ambient Weather stations.
+  description: Historic weather data captured by my Ambient Weather stations.
+- name: Users
+  description: User authentication and identity management.
 - name: Admin
   description: Admin actions.
 paths:
   /api/v1/users/{userId}:
     get:
       tags:
-      - User Authentication
+      - Users
       summary: Find User information based on the provided ID.
       operationId: getUser
       parameters:
@@ -45,7 +45,7 @@ paths:
                 $ref: "#/components/schemas/UserInfo"
     put:
       tags:
-      - User Authentication
+      - Users
       summary: Update User information based on the provided ID.
       operationId: updateUser
       parameters:
@@ -67,7 +67,7 @@ paths:
   /api/v1/users/register:
     post:
       tags:
-      - User Authentication
+      - Users
       summary: Create a new User.
       operationId: registerUser
       requestBody:
@@ -86,7 +86,7 @@ paths:
   /api/v1/users/refresh:
     post:
       tags:
-      - User Authentication
+      - Users
       summary: Refresh the User's JWT token.
       operationId: refreshUser
       responses:
@@ -99,7 +99,7 @@ paths:
   /api/v1/users/login:
     post:
       tags:
-      - User Authentication
+      - Users
       summary: Check the login credentials of an existing User.
       operationId: loginUser
       requestBody:
@@ -134,9 +134,14 @@ paths:
     get:
       tags:
       - Weather
-      summary: "Provides all weather data, for the specified (optional) date range."
+      summary: "Provides all weather data, for the optional filter criteria."
       operationId: getWeather
       parameters:
+      - name: station
+        in: query
+        required: false
+        schema:
+          type: string
       - name: startDate
         in: query
         required: false
@@ -149,15 +154,25 @@ paths:
         schema:
           type: string
           format: date
+      - name: startMonth
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: endMonth
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
       responses:
         "200":
           description: OK
           content:
             '*/*':
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/WeatherDto"
+                $ref: "#/components/schemas/WeatherDataDto"
   /api/v1/weather/{date}/{station}:
     get:
       tags:
@@ -183,9 +198,7 @@ paths:
           content:
             '*/*':
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/WeatherDto"
+                $ref: "#/components/schemas/WeatherDataDto"
   /api/v1/version/server:
     get:
       tags:
@@ -251,64 +264,22 @@ components:
       required:
       - password
       - username
-    WeatherDto:
+    WeatherDataDto:
       type: object
       properties:
-        station:
-          type: string
-          minLength: 1
-        date:
-          type: string
-          format: date
-        category:
-          type: string
-          enum:
-          - L
-          - A
-          - H
-        temperature:
-          type: number
-          format: double
-        windSpeed:
-          type: number
-          format: double
-        windMax:
-          type: number
-          format: double
-        windDirection:
-          type: string
-        rainRate:
-          type: number
-          format: double
-        rainDaily:
-          type: number
-          format: double
-        pressure:
-          type: number
-          format: double
-        humidity:
-          type: number
-          format: double
-        uvRadiationIndex:
-          type: number
-          format: double
-        missing:
-          type: number
-          format: double
-      required:
-      - category
-      - date
-      - humidity
-      - missing
-      - pressure
-      - rainDaily
-      - rainRate
-      - station
-      - temperature
-      - uvRadiationIndex
-      - windDirection
-      - windMax
-      - windSpeed
+        weather:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    type: number
+                    format: double
     AppVersion:
       type: object
       properties:
