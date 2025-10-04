@@ -1,6 +1,7 @@
 package mywild.wildweather.domain.weather.logic;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,18 +21,21 @@ import mywild.wildweather.domain.weather.web.WeatherDataDto;
 @Service
 public class WeatherService {
 
-    private static final Map<String, Function<WeatherEntity, Double>> FIELD_EXTRACTORS = Map.of(
-        "tmp", WeatherEntity::getTemperature,
-        "wSp", WeatherEntity::getWindSpeed,
-        "wMx", WeatherEntity::getWindMax,
-        "wDr", entity -> mapDirection(entity.getWindDirection()),
-        "rRt", WeatherEntity::getRainRate,
-        "rDy", WeatherEntity::getRainDaily,
-        "prs", WeatherEntity::getPressure,
-        "hmd", WeatherEntity::getHumidity,
-        "uvI", WeatherEntity::getUvRadiationIndex,
-        "mis", WeatherEntity::getMissing
-    );
+    private static final Map<String, Function<WeatherEntity, Double>> FIELD_EXTRACTORS;
+    static {
+        Map<String, Function<WeatherEntity, Double>> fieldMappings = new LinkedHashMap<>();
+        fieldMappings.put("tmp", WeatherEntity::getTemperature);
+        fieldMappings.put("wSp", WeatherEntity::getWindSpeed);
+        fieldMappings.put("wMx", WeatherEntity::getWindMax);
+        fieldMappings.put("wDr", e -> mapDirection(e.getWindDirection()));
+        fieldMappings.put("rRt", WeatherEntity::getRainRate);
+        fieldMappings.put("rDy", WeatherEntity::getRainDaily);
+        fieldMappings.put("prs", WeatherEntity::getPressure);
+        fieldMappings.put("hmd", WeatherEntity::getHumidity);
+        fieldMappings.put("uvI", WeatherEntity::getUvRadiationIndex);
+        fieldMappings.put("mis", WeatherEntity::getMissing);
+        FIELD_EXTRACTORS = Collections.unmodifiableMap(fieldMappings);
+    }
 
     private static double mapDirection(String direction) {
         if (direction == null || direction.isBlank())

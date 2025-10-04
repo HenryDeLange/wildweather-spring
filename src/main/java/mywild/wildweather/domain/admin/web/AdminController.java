@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import mywild.wildweather.domain.weather.logic.WeatherScheduler;
+import mywild.wildweather.domain.weather.logic.WeatherApiScheduler;
+import mywild.wildweather.domain.weather.logic.WeatherCsvScheduler;
 import mywild.wildweather.framework.web.BaseController;
 
 @Tag(name = "Admin", description = "Admin actions.")
@@ -14,15 +15,24 @@ import mywild.wildweather.framework.web.BaseController;
 public class AdminController extends BaseController {
 
     @Autowired
-    private WeatherScheduler scheduler;
+    private WeatherCsvScheduler csvScheduler;
+
+    @Autowired
+    private WeatherApiScheduler apiScheduler;
 
     @Operation(summary = "Manually trigger the processing of CSV files.")
-    @PostMapping("/admin/process-files")
+    @PostMapping("/admin/process/csv")
     public void triggerCsvProcessing(@RequestParam(required = false) boolean forceFullReload) {
         if (forceFullReload) {
-            scheduler.resetProcessedCsvFiles();
+            csvScheduler.resetProcessedCsvFiles();
         }
-        scheduler.processCsvFiles();
+        csvScheduler.processCsvFiles();
+    }
+
+    @Operation(summary = "Manually trigger the processing of Ambient Weather API data.")
+    @PostMapping("/admin/process/api")
+    public void triggerApiProcessing(@RequestParam(required = false) boolean processAllAvailable) {
+        apiScheduler.processApiData(processAllAvailable);
     }
 
 }

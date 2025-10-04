@@ -36,7 +36,7 @@ import mywild.wildweather.domain.weather.data.WeatherRepository;
 
 @Slf4j
 @Service
-public class WeatherScheduler {
+public class WeatherCsvScheduler {
 
     private final int SCHEDULE_DELAY = 5 * 1000; // 5 seconds
     private final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour

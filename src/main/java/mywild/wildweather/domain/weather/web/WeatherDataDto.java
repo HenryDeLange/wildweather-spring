@@ -3,6 +3,7 @@ package mywild.wildweather.domain.weather.web;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,6 +21,7 @@ import mywild.wildweather.domain.weather.data.WeatherCategory;
 @AllArgsConstructor
 public class WeatherDataDto {
 
+    @NotNull
     @Builder.Default
     private Map<
         String/*station*/,
