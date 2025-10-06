@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -233,14 +234,14 @@ public class WeatherCsvScheduler {
         for (var csvFile : csvFiles) {
             tasks.add(() -> {
                 var csvName = getCsvName(csvFile);
-                var newRecords = 0;
+                var goodRecords = 0;
                 var duplicates = 0;
-                var gaps = 0;
+                var gapRecords = 0;
                 var errors = 0;
                 try (var reader = Files.newBufferedReader(csvFile)) {
                     StringBuilder logBuilder = new StringBuilder();
                     logBuilder.append("----------------").append(System.lineSeparator());
-                    logBuilder.append(MessageFormatter.format("Processing Delayed Fine Scale File : {}", csvName).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("Processing Delayed File : {}", csvName).getMessage()).append(System.lineSeparator());
                     try {
                         String[] headers = getHeaders(reader);
                         ZonedDateTime prevDateTime = null;
@@ -250,16 +251,15 @@ public class WeatherCsvScheduler {
                             var date = dateTime.toLocalDate();
                             var station = csvFile.getParent().getFileName().toString();
                             var duplicateKey = station + "_" + record.get("Date");
-                            if (!detectDuplicateRecords.contains(duplicateKey)) {
+                            if (detectDuplicateRecords.add(duplicateKey)) {
+                                recordsPerDate.compute(new RecordsPerDateKey(station, date), (_, v) -> v == null ? 1 : v + 1);
                                 // The CSV file's dates should be in descending order (every 5 mins), thus it is possible to easily detect gaps
                                 if (prevDateTime == null || dateTime.plusMinutes(9).isAfter(prevDateTime)) {
-                                    recordsPerDate.compute(new RecordsPerDateKey(station, date), (k, v) -> v == null ? 1 : v + 1);
-                                    detectDuplicateRecords.add(duplicateKey);
-                                    newRecords++;
+                                    goodRecords++;
                                 }
                                 else {
                                     log.trace("Large time gap : Prev {} vs Current {}", prevDateTime, dateTime);
-                                    gaps++;
+                                    gapRecords++;
                                 }
                             }
                             else {
@@ -273,10 +273,10 @@ public class WeatherCsvScheduler {
                         log.error(ex.getMessage(), ex);
                         errors++;
                     }
-                    logBuilder.append(MessageFormatter.format("   Processed  : {}", newRecords).getMessage()).append(System.lineSeparator());
-                    logBuilder.append(MessageFormatter.format("   Duplicates : {}", duplicates).getMessage()).append(System.lineSeparator());
-                    logBuilder.append(MessageFormatter.format("   Gaps       : {}", gaps).getMessage()).append(System.lineSeparator());
-                    logBuilder.append(MessageFormatter.format("   Errors     : {}", errors).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("   Good Records : {}", goodRecords).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("   Gap Records  : {}", gapRecords).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("   Duplicates   : {}", duplicates).getMessage()).append(System.lineSeparator());
+                    logBuilder.append(MessageFormatter.format("   Errors       : {}", errors).getMessage()).append(System.lineSeparator());
                     log.info(logBuilder.toString());
                 }
                 processedCsvFiles.add(csvName);
@@ -288,19 +288,27 @@ public class WeatherCsvScheduler {
             new CsvThreadFactory("f-csv-"));
         executor.invokeAll(tasks);
         executor.shutdown();
-
+        // Calculate missing percentage
         if (!recordsPerDate.entrySet().isEmpty()) {
             log.info("----------------");
-            log.info("Updating database entities to flag dates with missing CSV records...");
+            log.info("Updating database entities to indicate percentage of missing records per day...");
             var updated = 0;
+            var missing = 0;
             for (var entry : recordsPerDate.entrySet()) {
                 try {
                     var entities = repo.findAllByDateAndStationOrderByDateAscCategoryAsc(entry.getKey().date, entry.getKey().station);
-                    entities.forEach(temp -> {
+                    for (var temp : entities) {
                         if (temp.getDate().equals(entry.getKey().date)) {
-                            temp.setMissing(EXPECTED_RECORDS_PER_DAY - entry.getValue());
+                            if (entry.getValue() < EXPECTED_RECORDS_PER_DAY) {
+                                temp.setMissing(Math.round((EXPECTED_RECORDS_PER_DAY - entry.getValue()) / (double) EXPECTED_RECORDS_PER_DAY * 100.0));
+                                missing++;
+                            }
+                            else if (entry.getValue() > EXPECTED_RECORDS_PER_DAY) {
+                                log.warn("More days counted ({}) than expected ({}) for : {} on {}", 
+                                    entry.getValue(), EXPECTED_RECORDS_PER_DAY, entry.getKey().station, entry.getKey().date);
+                            }
                         }
-                    });
+                    }
                     repo.saveAll(entities);
                     updated = updated + entities.size();
                 }
@@ -308,7 +316,42 @@ public class WeatherCsvScheduler {
                     log.error(ex.getMessage(), ex);
                 }
             }
-            log.info("   Updated : {}", updated);
+            log.info("   Days Updated              : {}", updated);
+            log.info("   Days with Missing records : {}", missing);
+        }
+        // Insert missing days
+        log.info("----------------");
+        log.info("Updating database entities to insert completely missing days...");
+        for (var station : repo.findStations()) {
+            log.info("Processing station : {}", station);
+            var newDays = 0;
+            var entities = repo.findAllByStationOrderByDateAscCategoryAsc(station);
+            LocalDate prevDate = entities.get(0).getDate();
+            for (var weather : entities) {
+                try {
+                    if (prevDate.plusDays(1).isBefore(weather.getDate())) {
+                        for (var i = 1; i < ChronoUnit.DAYS.between(prevDate, weather.getDate()); i++) {
+                            for (var category : WeatherCategory.values()) {
+                                repo.save(
+                                    WeatherEntity.builder()
+                                        .station(station)
+                                        .date(prevDate.plusDays(i))
+                                        .category(category)
+                                        .windDirection("")
+                                        .missing(100)
+                                    .build()
+                                );
+                            }
+                            newDays++;
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+                prevDate = weather.getDate();
+            }
+            log.info("   Missing Days Inserted  : {}", newDays);
         }
     }
 

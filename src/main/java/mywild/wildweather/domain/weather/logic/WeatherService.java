@@ -1,6 +1,8 @@
 package mywild.wildweather.domain.weather.logic;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,11 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
+import mywild.wildweather.domain.weather.data.WeatherCategory;
 import mywild.wildweather.domain.weather.data.WeatherEntity;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 import mywild.wildweather.domain.weather.web.WeatherDataDto;
+import mywild.wildweather.domain.weather.web.WeatherGrouping;
 
 @Slf4j
 @Validated
@@ -51,39 +54,41 @@ public class WeatherService {
     private WeatherRepository repo;
 
     public @Valid WeatherDataDto getWeather(
-            String station, LocalDate startDate, LocalDate endDate, 
+            WeatherCategory category,
+            WeatherGrouping grouping,
+            String station,
+            LocalDate startDate, LocalDate endDate,
             Integer startMonth, Integer endMonth) {
-        return mapEntitiesToDto(repo.searchWeather(station, startDate, endDate, startMonth, endMonth));
+        return mapEntitiesToDto(grouping, 
+            repo.searchWeather(category, station, startDate, endDate, startMonth, endMonth));
     }
 
-    public @Valid WeatherDataDto getStationWeatherOnDay(
-            @Valid LocalDate date, @NotBlank String station) {
-        return mapEntitiesToDto(repo.findAllByDateAndStationOrderByDateAscCategoryAsc(date, station));
-    }
-
-    private WeatherDataDto mapEntitiesToDto(List<WeatherEntity> entities) {
+    private WeatherDataDto mapEntitiesToDto(WeatherGrouping grouping, List<WeatherEntity> entities) {
         var weatherData = new WeatherDataDto();
-        String prevStation = null;
-        LocalDate prevDate = null;
         for (var entity : entities) {
             var station = entity.getStation();
-            var date = entity.getDate();
+            var group = grouping == WeatherGrouping.DAY_AVERAGE ? entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                : grouping == WeatherGrouping.WEEK_AVERAGE ? String.format("%02d", entity.getDate().get(WeekFields.ISO.weekOfYear()))
+                : grouping == WeatherGrouping.WEEK_TOTAL ? String.format("%02d", entity.getDate().get(WeekFields.ISO.weekOfYear()))
+                : grouping == WeatherGrouping.MONTH_AVERAGE ? String.format("%02d", entity.getDate().getMonthValue())
+                : grouping == WeatherGrouping.MONTH_TOTAL ? String.format("%02d", entity.getDate().getMonthValue())
+                : grouping == WeatherGrouping.YEAR_AVERAGE ? String.valueOf(entity.getDate().getYear())
+                : grouping == WeatherGrouping.YEAR_TOTAL ? String.valueOf(entity.getDate().getYear())
+                    : entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
             var category = entity.getCategory();
-            if (prevStation == null || !prevStation.equals(station)) {
-                prevDate = null;
-            }
-            if (prevDate != null && prevDate.plusDays(1).isBefore(date)) {
-                log.warn("large date gap: {} vs {}", prevDate, date);
-            }
             FIELD_EXTRACTORS.forEach((fieldName, extractor) -> {
                 var value = extractor.apply(entity);
-                weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
-                    .computeIfAbsent(date.getYear(), _ -> new LinkedHashMap<>())
-                        .computeIfAbsent(date, _ -> new LinkedHashMap<>())
-                            .computeIfAbsent(fieldName, _ -> new LinkedHashMap<>())
-                                .computeIfAbsent(category, _ -> value);
+                var groupEntry = weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
+                    .computeIfAbsent(entity.getDate().getYear(), _ -> new LinkedHashMap<>())
+                        .computeIfAbsent(group, _ -> new LinkedHashMap<>())
+                            .computeIfAbsent(fieldName, _ -> new LinkedHashMap<>());
+                groupEntry.computeIfAbsent(category, k -> {
+                    if (grouping.name().contains("AVERAGE")) {
+                        System.out.println("TODO: Keep track of record count, then afterwards (after all have been summed) divide by count?");
+                    }
+                    return groupEntry.get(k) + value;
+                });
             });
-            prevDate = date;
         }
         return weatherData;
     }

@@ -26,7 +26,7 @@ public class WeatherDataDto {
     private Map<
         String/*station*/,
             Map<Integer/*year*/,
-                Map<LocalDate/*day*/,
+                Map<String/*grouping*/,
                     Map<String/*field*/,
                         Map<WeatherCategory/*category*/,
                             Double/*value*/

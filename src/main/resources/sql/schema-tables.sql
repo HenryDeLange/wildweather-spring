@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     UNIQUE(username)
 );
 
--- DAILY WEATHER
+-- WEATHER (DAILY)
 CREATE TABLE IF NOT EXISTS "weather" (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     station VARCHAR(64) NOT NULL,           -- The station's name
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS "weather" (
     pressure DECFLOAT NOT NULL,             -- CSV Column: Relative Pressure (hPa)
     humidity DECFLOAT NOT NULL,             -- CSV Column: Humidity (%)
     uv_radiation_index DECFLOAT NOT NULL,   -- CSV Column: Ultra-Violet Radiation Index
-    missing DECFLOAT NOT NULL,               -- The percentage of records missing during the day
+    missing DECFLOAT NOT NULL,              -- The percentage of records missing during the day
     UNIQUE (date, station, category)
 );
 

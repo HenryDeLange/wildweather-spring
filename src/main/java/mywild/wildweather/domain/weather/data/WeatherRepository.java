@@ -11,27 +11,38 @@ import java.util.List;
 public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
 
     @Query("""
+        SELECT DISTINCT w.station
+        FROM "weather" w
+        """)
+    List<String> findStations();
+
+    @Query("""
         SELECT *
         FROM "weather" w
         WHERE
-        (:station IS NULL OR w.station = :station)
-        AND (:startDate IS NULL OR w.date >= :startDate)
-        AND (:endDate IS NULL OR w.date <= :endDate)
-        AND (:startMonth IS NULL OR MONTH(w.date) >= :startMonth)
-        AND (:endMonth IS NULL OR MONTH(w.date) <= :endMonth)
+            (:category IS NULL OR w.category = :category)
+            AND (:station IS NULL OR w.station = :station)
+            AND (:startDate IS NULL OR w.date >= :startDate)
+            AND (:endDate IS NULL OR w.date <= :endDate)
+            AND (:startMonth IS NULL OR MONTH(w.date) >= :startMonth)
+            AND (:endMonth IS NULL OR MONTH(w.date) <= :endMonth)
         ORDER BY w.date ASC, w.station ASC, w.category ASC
         """)
     List<WeatherEntity> searchWeather(
+        @Param("category") WeatherCategory category,
         @Param("station") String station,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,
         @Param("startMonth") Integer startMonth,
         @Param("endMonth") Integer endMonth);
 
+    List<WeatherEntity> findAllByStationOrderByDateAscCategoryAsc(
+        String station);
+        
     List<WeatherEntity> findAllByDateAndStationOrderByDateAscCategoryAsc(
         LocalDate date,
         String station);
-    
+
     WeatherEntity findByDateAndStationAndCategory(
         LocalDate date,
         String station,
