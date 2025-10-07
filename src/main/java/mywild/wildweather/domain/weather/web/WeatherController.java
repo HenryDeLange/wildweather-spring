@@ -1,6 +1,7 @@
 package mywild.wildweather.domain.weather.web;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,11 +21,12 @@ public class WeatherController extends BaseController {
     @Autowired
     private WeatherService service;
 
-    @Operation(summary = "Provides all weather data, for the optional filter criteria.")
+    @Operation(summary = "Returns all weather data, for the optional filter criteria.")
     @GetMapping("/weather")
     public WeatherDataDto getWeather(
             @RequestParam(required = false) WeatherCategory category,
             @RequestParam(required = false) WeatherGrouping grouping,
+            @RequestParam(required = false) WeatherAggregate aggregate,
             @RequestParam(required = false) String station,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate, 
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -35,7 +37,13 @@ public class WeatherController extends BaseController {
                 || (startMonth != null && endMonth != null && startMonth > endMonth)) {
             throw new BadRequestException(station);
         }
-        return service.getWeather(category, grouping, station, startDate, endDate, startMonth, endMonth);
+        return service.getWeather(category, grouping, aggregate, station, startDate, endDate, startMonth, endMonth);
+    }
+
+    @Operation(summary = "Returns all weather stations.")
+    @GetMapping("/weather/stations")
+    public List<String> getWeatherStations() {
+        return service.getWeatherStations();
     }
 
 }

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.weather.data.WeatherCategory;
 import mywild.wildweather.domain.weather.data.WeatherEntity;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
+import mywild.wildweather.domain.weather.web.WeatherAggregate;
 import mywild.wildweather.domain.weather.web.WeatherDataDto;
 import mywild.wildweather.domain.weather.web.WeatherGrouping;
 
@@ -56,41 +58,64 @@ public class WeatherService {
     public @Valid WeatherDataDto getWeather(
             WeatherCategory category,
             WeatherGrouping grouping,
+            WeatherAggregate aggregate,
             String station,
             LocalDate startDate, LocalDate endDate,
             Integer startMonth, Integer endMonth) {
-        return mapEntitiesToDto(grouping, 
+        return mapEntitiesToDto(grouping, aggregate,
             repo.searchWeather(category, station, startDate, endDate, startMonth, endMonth));
     }
 
-    private WeatherDataDto mapEntitiesToDto(WeatherGrouping grouping, List<WeatherEntity> entities) {
+    private WeatherDataDto mapEntitiesToDto(
+            WeatherGrouping grouping,
+            WeatherAggregate aggregate,
+            List<WeatherEntity> entities) {
+        Map<String, Integer> daysPerGroup = new HashMap<>();
         var weatherData = new WeatherDataDto();
         for (var entity : entities) {
             var station = entity.getStation();
-            var group = grouping == WeatherGrouping.DAY_AVERAGE ? entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
-                : grouping == WeatherGrouping.WEEK_AVERAGE ? String.format("%02d", entity.getDate().get(WeekFields.ISO.weekOfYear()))
-                : grouping == WeatherGrouping.WEEK_TOTAL ? String.format("%02d", entity.getDate().get(WeekFields.ISO.weekOfYear()))
-                : grouping == WeatherGrouping.MONTH_AVERAGE ? String.format("%02d", entity.getDate().getMonthValue())
-                : grouping == WeatherGrouping.MONTH_TOTAL ? String.format("%02d", entity.getDate().getMonthValue())
-                : grouping == WeatherGrouping.YEAR_AVERAGE ? String.valueOf(entity.getDate().getYear())
-                : grouping == WeatherGrouping.YEAR_TOTAL ? String.valueOf(entity.getDate().getYear())
+            var year = entity.getDate().getYear();
+            var group = grouping == WeatherGrouping.DAILY ? entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                : grouping == WeatherGrouping.WEEKLY ? String.format("%02d", entity.getDate().get(WeekFields.ISO.weekOfYear()))
+                : grouping == WeatherGrouping.MONTHLY ? String.format("%02d", entity.getDate().getMonthValue())
+                : grouping == WeatherGrouping.YEARLY ? String.valueOf(entity.getDate().getYear())
                     : entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
             var category = entity.getCategory();
             FIELD_EXTRACTORS.forEach((fieldName, extractor) -> {
                 var value = extractor.apply(entity);
-                var groupEntry = weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
-                    .computeIfAbsent(entity.getDate().getYear(), _ -> new LinkedHashMap<>())
+                weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
+                    .computeIfAbsent(year, _ -> new LinkedHashMap<>())
                         .computeIfAbsent(group, _ -> new LinkedHashMap<>())
-                            .computeIfAbsent(fieldName, _ -> new LinkedHashMap<>());
-                groupEntry.computeIfAbsent(category, k -> {
-                    if (grouping.name().contains("AVERAGE")) {
-                        System.out.println("TODO: Keep track of record count, then afterwards (after all have been summed) divide by count?");
-                    }
-                    return groupEntry.get(k) + value;
+                            .computeIfAbsent(fieldName, _ -> new LinkedHashMap<>())
+                                .merge(category, value, (a, b) -> Math.round((a + b) * 10) / 10.0);
+            });
+            if (grouping != WeatherGrouping.DAILY && (aggregate == null || aggregate == WeatherAggregate.AVERAGE)) {
+                if (entity.getCategory() == WeatherCategory.A) {
+                    String daysPerGroupKey = station + "-" + year + "-" + group;
+                    daysPerGroup.merge(daysPerGroupKey, 1, Integer::sum);
+                }
+            }
+        }
+        if (!daysPerGroup.isEmpty()) {
+            weatherData.getWeather().forEach((station, yearMap) -> {
+                yearMap.forEach((year, groupMap) -> {
+                    groupMap.forEach((group, fieldMap) -> {
+                        fieldMap.forEach((_, categoryMap) -> {
+                            categoryMap.replaceAll((_, total) -> {
+                                String daysPerGroupKey = station + "-" + year + "-" + group;
+                                Integer days = daysPerGroup.getOrDefault(daysPerGroupKey, 1);
+                                return Math.round(total / (double) days * 10.0) / 10.0;
+                            });
+                        });
+                    });
                 });
             });
         }
         return weatherData;
+    }
+
+    public List<String> getWeatherStations() {
+        return repo.findStations();
     }
 
 }

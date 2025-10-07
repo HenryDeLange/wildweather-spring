@@ -149,7 +149,7 @@ paths:
     get:
       tags:
       - Weather
-      summary: "Provides all weather data, for the optional filter criteria."
+      summary: "Returns all weather data, for the optional filter criteria."
       operationId: getWeather
       parameters:
       - name: category
@@ -167,13 +167,18 @@ paths:
         schema:
           type: string
           enum:
-          - DAY_AVERAGE
-          - WEEK_AVERAGE
-          - WEEK_TOTAL
-          - MONTH_AVERAGE
-          - MONTH_TOTAL
-          - YEAR_AVERAGE
-          - YEAR_TOTAL
+          - DAILY
+          - WEEKLY
+          - MONTHLY
+          - YEARLY
+      - name: aggregate
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - AVERAGE
+          - TOTAL
       - name: station
         in: query
         required: false
@@ -210,6 +215,21 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/WeatherDataDto"
+  /api/v1/weather/stations:
+    get:
+      tags:
+      - Weather
+      summary: Returns all weather stations.
+      operationId: getWeatherStations
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
   /api/v1/version/server:
     get:
       tags:

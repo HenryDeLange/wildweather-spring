@@ -1,6 +1,5 @@
 package mywild.wildweather.domain.weather.web;
 
-import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.validation.constraints.NotNull;
