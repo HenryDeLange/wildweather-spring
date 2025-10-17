@@ -4,6 +4,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,7 @@ public class TokenService {
                         ? Date.from(LocalDateTime.now().plusMinutes(accessTokenDuration).atZone(ZoneId.systemDefault()).toInstant()) // Access
                         : Date.from(LocalDateTime.now().plusMinutes(refreshTokenDuration).atZone(ZoneId.systemDefault()).toInstant()) // Refresh
                     )
-                    .claim("scope", tokenType.toString().toLowerCase())
+                    .claim("scope", tokenType.toString().toLowerCase(Locale.getDefault()))
                     .claim(TokenConstants.JWT_USER_ID, userId)
                     .build();
             SignedJWT jws = new SignedJWT(jwtHeader, jwtClaims);

@@ -1,13 +1,18 @@
 package mywild.wildweather.framework.swagger;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.event.EventListener;
@@ -28,7 +33,9 @@ public class OpenApiYamlWriter {
     private String contextPath;
 
     @EventListener
-    public void onWebServerReady(WebServerInitializedEvent event) throws Exception {
+    public void onWebServerReady(WebServerInitializedEvent event)
+            throws KeyStoreException, FileNotFoundException,
+            IOException, KeyManagementException, NoSuchAlgorithmException {
         if (devMode) {
             try {
                 String url = "http://localhost:" + port + contextPath + "/v3/api-docs.yaml";
@@ -39,7 +46,7 @@ public class OpenApiYamlWriter {
                 Path ymlPath = Paths.get("src/main/openapi/api.yml");
                 log.debug("DEV: Write OpenAPI YML to: {}", ymlPath.toAbsolutePath());
                 Files.createDirectories(ymlPath.getParent());
-                Files.write(ymlPath, response.body().getBytes());
+                Files.write(ymlPath, response.body().getBytes(Charset.defaultCharset()));
             }
             catch (IOException | InterruptedException ex) {
                 log.error("Failed to write OpenAPI YML!", ex);

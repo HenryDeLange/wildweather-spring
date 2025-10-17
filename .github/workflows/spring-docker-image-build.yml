@@ -1,4 +1,4 @@
-name: Build and Publish Spring Docker Image
+name: Build and Publish Spring Boot Docker Image
 
 on:
     workflow_dispatch:

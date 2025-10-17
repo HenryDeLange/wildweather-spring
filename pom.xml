@@ -16,7 +16,7 @@
     <version>0.1.0</version>
 
     <name>WildWeather</name>
-    <description>The WildWeather server.</description>
+    <description>WildWeather Server</description>
     <developers>
         <developer>
             <name>Henry de Lange</name>
@@ -31,7 +31,7 @@
     </licenses>
 
     <properties>
-        <java.version>24</java.version>
+        <java.version>25</java.version>
     </properties>
 
     <dependencies>
@@ -140,8 +140,13 @@
         <finalName>wildweather-app</finalName>
         <plugins>
             <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
@@ -162,20 +167,9 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>io.github.git-commit-id</groupId>
                 <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>9.0.2</version>
                 <executions>
                     <execution>
                         <id>get-the-git-infos</id>
@@ -257,18 +251,95 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>license-maven-plugin</artifactId>
-                        <version>2.5.0</version>
+                        <version>2.7.0</version>
                         <executions>
                             <execution>
-                                <id>aggregate-download-licenses</id>
+                                <id>download-licenses</id>
+                                <phase>generate-resources</phase>
                                 <goals>
-                                    <goal>aggregate-download-licenses</goal>
+                                    <goal>download-licenses</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>copy-license-xml</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}/licenses</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/generated-resources</directory>
+                                            <includes>
+                                                <include>licenses.xml</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>report</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-site-plugin</artifactId>
+                        <version>3.21.0</version>
+                        <executions>
+                            <execution>
+                            <id>generate-site</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>site</goal>
+                            </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <reporting>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>4.9.7.0</version>
+                        <configuration>
+                            <excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>
+                            <xmlOutput>true</xmlOutput>
+                            <xmlOutputDirectory>${project.build.directory}</xmlOutputDirectory>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <failOnError>false</failOnError>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <version>3.28.0</version>
+                        <configuration>
+                            <linkXRef>false</linkXRef>
+                            <outputDirectory>${project.build.directory}/pmd-report</outputDirectory>
+                            <format>html</format>
+                            <!-- <excludes>
+                                <exclude>**/mywild/wildweather/openapi/**/*.java</exclude>
+                            </excludes> -->
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </reporting>
         </profile>
     </profiles>
 

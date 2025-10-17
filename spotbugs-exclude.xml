@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- <Match>
+    <Package name="~mywild\.wildweather\.openapi(\..*)?" />
+  </Match> -->
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
+    <Class name="mywild.wildweather.framework.swagger.OpenApiYamlWriter" />
+    <Method name="onWebServerReady" />
+  </Match>
+  <Match>
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+    <Class name="mywild.wildweather.domain.weather.logic.WeatherCsvScheduler" />
+    <Method name="processSummaryFile" />
+  </Match>
+</FindBugsFilter>

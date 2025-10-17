@@ -1,6 +1,5 @@
 package mywild.wildweather.framework.error;
 
-import org.h2.jdbc.JdbcSQLSyntaxErrorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +17,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -32,7 +32,7 @@ public class ErrorConfig {
      * which masks the real error codes thrown from the services.
      */
     @RestControllerAdvice
-    public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
+    public static class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
         @Autowired
         private MessageSource messageSource;
@@ -60,17 +60,22 @@ public class ErrorConfig {
                     return handleExceptionInternal(dbException, dbException.getMessage(),
                         new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
                 }
-                else if (notHandledException instanceof JdbcSQLSyntaxErrorException dbException) {
-                    log.error(dbException.getMessage(), dbException);
-                    return handleExceptionInternal(dbException, dbException.getMessage(),
-                        new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+                else if (notHandledException instanceof ResourceAccessException accessException) {
+                    String translatedMessage = messageSource.getMessage(
+                        "api.connection-error", null, accessException.getMessage(), request.getLocale());
+                    log.error(translatedMessage, accessException);
+                    return handleExceptionInternal(accessException, translatedMessage,
+                        new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
                 }
-                // else if (notHandledException instanceof ResourceAccessException accessException) {
-                //     String translatedMessage = messageSource.getMessage(
-                //         "api.connection-error", null, accessException.getMessage(), request.getLocale());
-                //     log.error(translatedMessage, accessException);
-                //     return handleExceptionInternal(accessException, translatedMessage,
-                //         new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+                // else if (notHandledException instanceof ApiException apiException) {
+                //     log.error(apiException.getLocalizedMessage(), apiException);
+                //     HttpStatus resolvedStatus = HttpStatus.resolve(apiException.getCode());
+                //     HttpStatus status = (resolvedStatus != null) ? resolvedStatus : HttpStatus.INTERNAL_SERVER_ERROR;
+                //     String message = (apiException.getResponseBody() != null)
+                //         ? messageSource.getMessage("api.request-error", null, apiException.getMessage(), request.getLocale()) 
+                //         : messageSource.getMessage("api.connection-error", null, apiException.getMessage(), request.getLocale());
+                //     return handleExceptionInternal(apiException, message,
+                //         new HttpHeaders(), status, request);
                 // }
                 else  {
                     log.error(notHandledException.getMessage(), notHandledException);

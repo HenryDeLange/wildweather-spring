@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.slf4j.helpers.MessageFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -39,15 +41,15 @@ import mywild.wildweather.domain.weather.data.WeatherRepository;
 @Service
 public class WeatherCsvScheduler {
 
-    private final int SCHEDULE_DELAY = 5 * 1000; // 5 seconds
-    private final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour
-    private final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // Every 5 minutes
+    private static final int SCHEDULE_DELAY = 5 * 1000; // 5 seconds
+    private static final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour
+    private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // Every 5 minutes
 
-    private final Object lock = new Object();
+    private static final Object lock = new Object();
 
-    private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
 
-    private final List<String> processedCsvFiles = new ArrayList<>();
+    private static final List<String> processedCsvFiles = new ArrayList<>();
 
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;
@@ -78,7 +80,7 @@ public class WeatherCsvScheduler {
             List<Path> fineScaleCsvFiles = processAllSummaryFiles(paths);
             processAllFineScaleFiles(fineScaleCsvFiles);
         }
-        catch (Exception ex) {
+        catch (IOException | InterruptedException ex) {
             log.error(ex.getMessage(), ex);
         }
         finally {
@@ -92,7 +94,7 @@ public class WeatherCsvScheduler {
     private List<Path> processAllSummaryFiles(Stream<Path> paths) throws InterruptedException {
         List<Path> csvFiles = paths
             .filter(Files::isRegularFile)
-            .filter(path -> path.toString().toLowerCase().endsWith(".csv"))
+            .filter(path -> path.toString().toLowerCase(Locale.getDefault()).endsWith(".csv"))
             .filter(path -> !processedCsvFiles.contains(getCsvName(path)))
             .toList();
         List<Path> fineScaleCsvFiles = Collections.synchronizedList(new ArrayList<>());
@@ -134,7 +136,7 @@ public class WeatherCsvScheduler {
                         if (!categoryRecord.contains("Datetime")) {
                             var category = WeatherCategory.valueOf(categoryRecord.substring(0, 1));
                             var date = LocalDate.parse(record.get("Date"));
-                            var station = csvFile.getParent().getFileName().toString();
+                            var station = getStationName(csvFile);
                             var temperature = Double.parseDouble(record.get("Outdoor Temperature"));
                             var windSpeed = Double.parseDouble(record.get("Wind Speed"));
                             var windMax = Double.parseDouble(record.get("Max Daily Gust"));
@@ -171,7 +173,7 @@ public class WeatherCsvScheduler {
                                     if (entity.getTemperature() == temperature
                                             || entity.getWindSpeed() == windSpeed
                                             || entity.getWindMax() == windMax
-                                            || entity.getWindDirection() == windDirection
+                                            || entity.getWindDirection().equals(windDirection)
                                             || entity.getRainRate() == rainRate
                                             || entity.getRainDaily() == rainDaily
                                             || entity.getPressure() == pressure
@@ -199,7 +201,7 @@ public class WeatherCsvScheduler {
                         log.trace(ex.getMessage(), ex);
                         warnings++;
                     }
-                    catch (Exception ex) {
+                    catch (IllegalArgumentException | OptimisticLockingFailureException | IllegalStateException ex) {
                         log.error("Could not process record!");
                         log.error("   CSV File : {}", csvName);
                         log.error("   Headers  : {}", Arrays.toString(headers));
@@ -214,7 +216,7 @@ public class WeatherCsvScheduler {
                 return false;
             }
         }
-        catch (Exception ex) {
+        catch (IOException ex) {
             log.error(ex.getMessage(), ex);
             errors++;
         }
@@ -249,7 +251,7 @@ public class WeatherCsvScheduler {
                         for (CSVRecord record : getRecords(reader, headers)) {
                             var dateTime = ZonedDateTime.parse(record.get("Date"));
                             var date = dateTime.toLocalDate();
-                            var station = csvFile.getParent().getFileName().toString();
+                            var station = getStationName(csvFile);
                             var duplicateKey = station + "_" + record.get("Date");
                             if (detectDuplicateRecords.add(duplicateKey)) {
                                 recordsPerDate.compute(new RecordsPerDateKey(station, date), (_, v) -> v == null ? 1 : v + 1);
@@ -269,7 +271,7 @@ public class WeatherCsvScheduler {
                             prevDateTime = dateTime;
                         }
                     }
-                    catch (Exception ex) {
+                    catch (IOException ex) {
                         log.error(ex.getMessage(), ex);
                         errors++;
                     }
@@ -312,7 +314,7 @@ public class WeatherCsvScheduler {
                     repo.saveAll(entities);
                     updated = updated + entities.size();
                 }
-                catch (Exception ex) {
+                catch (RuntimeException ex) {
                     log.error(ex.getMessage(), ex);
                 }
             }
@@ -346,7 +348,7 @@ public class WeatherCsvScheduler {
                         }
                     }
                 }
-                catch (Exception ex) {
+                catch (IllegalArgumentException | OptimisticLockingFailureException ex) {
                     log.error(ex.getMessage(), ex);
                 }
                 prevDate = weather.getDate();
@@ -357,10 +359,10 @@ public class WeatherCsvScheduler {
 
     private String[] getHeaders(BufferedReader reader) throws IOException {
         String headerLine = reader.readLine();
-        String[] headers = headerLine.split(",");
+        String[] headers = headerLine != null ? headerLine.split(",") : new String[] {};
         for (int i = 0; i < headers.length; i++) {
             var header = headers[i].replace("\"", "");
-            if (header == null || header.isBlank()) {
+            if (header.isBlank()) {
                 // Replace empty headers with the column index instead
                 header = "COL" + i;
             }
@@ -389,8 +391,20 @@ public class WeatherCsvScheduler {
         return records;
     }
 
+    private String getStationName(Path path) {
+        var stationPath = path.getParent();
+        if (stationPath == null) {
+            return "UNKNOWN";
+        }
+        var stationName = stationPath.getFileName();
+        if (stationName == null) {
+            return "UNKNOWN";
+        }
+        return stationName.toString();
+    }
+
     private String getCsvName(Path path) {
-        return path.getParent().getFileName() + " -> " + path.getFileName();
+        return getStationName(path) + " -> " + path.getFileName();
     }
 
     private record RecordsPerDateKey(
@@ -398,7 +412,7 @@ public class WeatherCsvScheduler {
         LocalDate date
     ) {
        // Record automatically generates: equals, hashCode and toString
-    };
+    }
 
     private class CsvThreadFactory implements ThreadFactory {
         

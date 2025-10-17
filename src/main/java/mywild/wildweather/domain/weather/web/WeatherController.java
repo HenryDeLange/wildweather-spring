@@ -2,6 +2,7 @@ package mywild.wildweather.domain.weather.web;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,10 +25,11 @@ public class WeatherController extends BaseController {
     @Operation(summary = "Returns all weather data, for the optional filter criteria.")
     @GetMapping("/weather")
     public WeatherDataDto getWeather(
-            @RequestParam(required = false) WeatherCategory category,
-            @RequestParam(required = false) WeatherGrouping grouping,
-            @RequestParam(required = false) WeatherAggregate aggregate,
             @RequestParam(required = false) String station,
+            @RequestParam(required = false) WeatherGrouping grouping,
+            @RequestParam(required = false) WeatherCategory category,
+            @RequestParam(required = false) WeatherAggregate aggregate,
+            @RequestParam(required = false) Set<WeatherField> weatherFields,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate, 
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) Integer startMonth,
@@ -37,7 +39,9 @@ public class WeatherController extends BaseController {
                 || (startMonth != null && endMonth != null && startMonth > endMonth)) {
             throw new BadRequestException(station);
         }
-        return service.getWeather(category, grouping, aggregate, station, startDate, endDate, startMonth, endMonth);
+        return service.getWeather(
+            station, grouping, category, aggregate, weatherFields, 
+            startDate, endDate, startMonth, endMonth);
     }
 
     @Operation(summary = "Returns all weather stations.")

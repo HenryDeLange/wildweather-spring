@@ -64,9 +64,9 @@ public class SecurityConfig implements WebMvcConfigurer {
                     // Root UI
                     .requestMatchers("/").permitAll()
                     .requestMatchers("/index.html").permitAll();
-                if (devMode) {
-                    // Nothing
-                }
+                // if (devMode) {
+                //     // Nothing
+                // }
                 authorize
                     // Actuator
                     // .requestMatchers("/actuator/**").permitAll()

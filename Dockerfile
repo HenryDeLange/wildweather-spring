@@ -1,11 +1,11 @@
-# Build a normal image
-
-FROM bellsoft/liberica-runtime-container:jdk-24-musl AS builder
+# Build the application
+FROM bellsoft/liberica-runtime-container:jdk-25-musl AS builder
 WORKDIR /app
 ADD ./ /app/
 RUN chmod +x ./mvnw && ./mvnw clean package -P prod
 
-FROM bellsoft/liberica-runtime-container:jre-24-slim-musl
+# Run the application
+FROM bellsoft/liberica-runtime-container:jre-25-slim-musl AS production
 WORKDIR /app
 EXPOSE 8080
 CMD ["java", "-jar", "/app/wildweather-app.jar"]

@@ -15,13 +15,13 @@ public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
     @Mapping(target = "id", ignore = true)
-    public UserEntity dtoToEntity(UserRegister dto);
+    UserEntity dtoToEntity(UserRegister dto);
 
-    public UserInfo entityToDto(UserEntity entity);
+    UserInfo entityToDto(UserEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "username", ignore = true)
     @Mapping(target = "password", ignore = true)
-    public UserEntity dtoToExistingEntity(@MappingTarget UserEntity entity, UserUpdate dto);
+    UserEntity dtoToExistingEntity(@MappingTarget UserEntity entity, UserUpdate dto);
 
 }

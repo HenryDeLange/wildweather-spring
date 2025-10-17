@@ -11,10 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class WeatherApiScheduler {
 
-    private final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
-    private final int SCHEDULE_RATE = 6 * 60 * 60 * 1000; // 6 hours
+    private static final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
+    private static final int SCHEDULE_RATE = 6 * 60 * 60 * 1000; // 6 hours
 
-    private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
 
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;

@@ -1,5 +1,6 @@
 package mywild.wildweather.user.logic;
 
+import java.util.Locale;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,7 +44,7 @@ public class UserService {
     }
 
     public @Valid Tokens loginUser(@Valid UserLogin dto) {
-        Optional<UserEntity> foundEntity = repo.findByUsername(dto.getUsername().toLowerCase());
+        Optional<UserEntity> foundEntity = repo.findByUsername(dto.getUsername().toLowerCase(Locale.getDefault()));
         if (!foundEntity.isPresent())
             throw new ForbiddenException("user.incorrect");
         if (!passwordEncoder.matches(dto.getPassword(), foundEntity.get().getPassword()))

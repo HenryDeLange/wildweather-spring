@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import mywild.wildweather.domain.weather.data.WeatherEntity;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 import mywild.wildweather.domain.weather.web.WeatherAggregate;
 import mywild.wildweather.domain.weather.web.WeatherDataDto;
+import mywild.wildweather.domain.weather.web.WeatherField;
 import mywild.wildweather.domain.weather.web.WeatherGrouping;
 
 @Slf4j
@@ -26,19 +28,19 @@ import mywild.wildweather.domain.weather.web.WeatherGrouping;
 @Service
 public class WeatherService {
 
-    private static final Map<String, Function<WeatherEntity, Double>> FIELD_EXTRACTORS;
+    private static final Map<WeatherField, Function<WeatherEntity, Double>> FIELD_EXTRACTORS;
     static {
-        Map<String, Function<WeatherEntity, Double>> fieldMappings = new LinkedHashMap<>();
-        fieldMappings.put("tmp", WeatherEntity::getTemperature);
-        fieldMappings.put("wSp", WeatherEntity::getWindSpeed);
-        fieldMappings.put("wMx", WeatherEntity::getWindMax);
-        fieldMappings.put("wDr", e -> mapDirection(e.getWindDirection()));
-        fieldMappings.put("rRt", WeatherEntity::getRainRate);
-        fieldMappings.put("rDy", WeatherEntity::getRainDaily);
-        fieldMappings.put("prs", WeatherEntity::getPressure);
-        fieldMappings.put("hmd", WeatherEntity::getHumidity);
-        fieldMappings.put("uvI", WeatherEntity::getUvRadiationIndex);
-        fieldMappings.put("mis", WeatherEntity::getMissing);
+        Map<WeatherField, Function<WeatherEntity, Double>> fieldMappings = new LinkedHashMap<>();
+        fieldMappings.put(WeatherField.TEMPERATURE, WeatherEntity::getTemperature);
+        fieldMappings.put(WeatherField.WIND_SPEED, WeatherEntity::getWindSpeed);
+        fieldMappings.put(WeatherField.WIND_MAX, WeatherEntity::getWindMax);
+        fieldMappings.put(WeatherField.WIND_DIRECTION, e -> mapDirection(e.getWindDirection()));
+        fieldMappings.put(WeatherField.RAIN_RATE, WeatherEntity::getRainRate);
+        fieldMappings.put(WeatherField.RAIN_DAILY, WeatherEntity::getRainDaily);
+        fieldMappings.put(WeatherField.PRESSURE, WeatherEntity::getPressure);
+        fieldMappings.put(WeatherField.HUMIDITY, WeatherEntity::getHumidity);
+        fieldMappings.put(WeatherField.UV_RADIATION_INDEX, WeatherEntity::getUvRadiationIndex);
+        fieldMappings.put(WeatherField.MISSING, WeatherEntity::getMissing);
         FIELD_EXTRACTORS = Collections.unmodifiableMap(fieldMappings);
     }
 
@@ -56,19 +58,21 @@ public class WeatherService {
     private WeatherRepository repo;
 
     public @Valid WeatherDataDto getWeather(
-            WeatherCategory category,
-            WeatherGrouping grouping,
-            WeatherAggregate aggregate,
             String station,
+            WeatherGrouping grouping,
+            WeatherCategory category,
+            WeatherAggregate aggregate,
+            Set<WeatherField> weatherFields,
             LocalDate startDate, LocalDate endDate,
             Integer startMonth, Integer endMonth) {
-        return mapEntitiesToDto(grouping, aggregate,
+        return mapEntitiesToDto(grouping, aggregate, weatherFields,
             repo.searchWeather(category, station, startDate, endDate, startMonth, endMonth));
     }
 
     private WeatherDataDto mapEntitiesToDto(
             WeatherGrouping grouping,
             WeatherAggregate aggregate,
+            Set<WeatherField> weatherFields,
             List<WeatherEntity> entities) {
         Map<String, Integer> daysPerGroup = new HashMap<>();
         var weatherData = new WeatherDataDto();
@@ -81,19 +85,21 @@ public class WeatherService {
                 : grouping == WeatherGrouping.YEARLY ? String.valueOf(entity.getDate().getYear())
                     : entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
             var category = entity.getCategory();
-            FIELD_EXTRACTORS.forEach((fieldName, extractor) -> {
-                var value = extractor.apply(entity);
-                weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
-                    .computeIfAbsent(year, _ -> new LinkedHashMap<>())
-                        .computeIfAbsent(group, _ -> new LinkedHashMap<>())
-                            .computeIfAbsent(fieldName, _ -> new LinkedHashMap<>())
-                                .merge(category, value, (a, b) -> Math.round((a + b) * 10) / 10.0);
-            });
-            if (grouping != WeatherGrouping.DAILY && (aggregate == null || aggregate == WeatherAggregate.AVERAGE)) {
-                if (entity.getCategory() == WeatherCategory.A) {
-                    String daysPerGroupKey = station + "-" + year + "-" + group;
-                    daysPerGroup.merge(daysPerGroupKey, 1, Integer::sum);
+            FIELD_EXTRACTORS.forEach((field, extractor) -> {
+                if (weatherFields == null || weatherFields.isEmpty() || weatherFields.contains(field)) {
+                    var value = extractor.apply(entity);
+                    weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
+                        .computeIfAbsent(year, _ -> new LinkedHashMap<>())
+                            .computeIfAbsent(group, _ -> new LinkedHashMap<>())
+                                .computeIfAbsent(field.getKey(), _ -> new LinkedHashMap<>())
+                                    .merge(category, value, (a, b) -> Math.round((a + b) * 10) / 10.0);
                 }
+            });
+            if (grouping != WeatherGrouping.DAILY
+                    && (aggregate == null || aggregate == WeatherAggregate.AVERAGE)
+                    && entity.getCategory() == WeatherCategory.A) {
+                String daysPerGroupKey = station + "-" + year + "-" + group;
+                daysPerGroup.merge(daysPerGroupKey, 1, Integer::sum);
             }
         }
         if (!daysPerGroup.isEmpty()) {

@@ -152,15 +152,11 @@ paths:
       summary: "Returns all weather data, for the optional filter criteria."
       operationId: getWeather
       parameters:
-      - name: category
+      - name: station
         in: query
         required: false
         schema:
           type: string
-          enum:
-          - L
-          - A
-          - H
       - name: grouping
         in: query
         required: false
@@ -171,6 +167,15 @@ paths:
           - WEEKLY
           - MONTHLY
           - YEARLY
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - L
+          - A
+          - H
       - name: aggregate
         in: query
         required: false
@@ -179,11 +184,25 @@ paths:
           enum:
           - AVERAGE
           - TOTAL
-      - name: station
+      - name: weatherFields
         in: query
         required: false
         schema:
-          type: string
+          type: array
+          items:
+            type: string
+            enum:
+            - TEMPERATURE
+            - WIND_SPEED
+            - WIND_MAX
+            - WIND_DIRECTION
+            - RAIN_RATE
+            - RAIN_DAILY
+            - PRESSURE
+            - HUMIDITY
+            - UV_RADIATION_INDEX
+            - MISSING
+          uniqueItems: true
       - name: startDate
         in: query
         required: false
