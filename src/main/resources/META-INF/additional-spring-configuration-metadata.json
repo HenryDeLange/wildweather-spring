@@ -78,5 +78,15 @@
     "name": "mywild.csv.folder",
     "type": "java.lang.String",
     "description": "The path to the root folder containing all of the Ambient Weather CSV files to process."
+  },
+  {
+    "name": "mywild.ambient-weather.app-key",
+    "type": "java.lang.String",
+    "description": "The Ambient Weather APP Key."
+  },
+  {
+    "name": "mywild.ambient-weather.api-key",
+    "type": "java.lang.String",
+    "description": "The Ambient Weather API Key."
   }
 ]}

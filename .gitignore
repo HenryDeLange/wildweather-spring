@@ -48,3 +48,6 @@ build/
 
 ### Project ###
 /data/logs
+
+# Sensitive Environment variables
+.env

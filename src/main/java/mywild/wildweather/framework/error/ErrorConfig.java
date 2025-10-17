@@ -22,6 +22,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import lombok.extern.slf4j.Slf4j;
+import mywild.ambientweather.openapi.client.ApiException;
 
 @Slf4j
 @Configuration
@@ -67,16 +68,16 @@ public class ErrorConfig {
                     return handleExceptionInternal(accessException, translatedMessage,
                         new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
                 }
-                // else if (notHandledException instanceof ApiException apiException) {
-                //     log.error(apiException.getLocalizedMessage(), apiException);
-                //     HttpStatus resolvedStatus = HttpStatus.resolve(apiException.getCode());
-                //     HttpStatus status = (resolvedStatus != null) ? resolvedStatus : HttpStatus.INTERNAL_SERVER_ERROR;
-                //     String message = (apiException.getResponseBody() != null)
-                //         ? messageSource.getMessage("api.request-error", null, apiException.getMessage(), request.getLocale()) 
-                //         : messageSource.getMessage("api.connection-error", null, apiException.getMessage(), request.getLocale());
-                //     return handleExceptionInternal(apiException, message,
-                //         new HttpHeaders(), status, request);
-                // }
+                else if (notHandledException instanceof ApiException apiException) {
+                    log.error(apiException.getLocalizedMessage(), apiException);
+                    HttpStatus resolvedStatus = HttpStatus.resolve(apiException.getCode());
+                    HttpStatus status = (resolvedStatus != null) ? resolvedStatus : HttpStatus.INTERNAL_SERVER_ERROR;
+                    String message = (apiException.getResponseBody() != null)
+                        ? messageSource.getMessage("api.request-error", null, apiException.getMessage(), request.getLocale()) 
+                        : messageSource.getMessage("api.connection-error", null, apiException.getMessage(), request.getLocale());
+                    return handleExceptionInternal(apiException, message,
+                        new HttpHeaders(), status, request);
+                }
                 else  {
                     log.error(notHandledException.getMessage(), notHandledException);
                     return handleExceptionInternal(notHandledException, notHandledException.getMessage(),

@@ -1,6 +1,5 @@
-package mywild.wildweather.user.data;
+package mywild.wildweather.base.user.web;
 
-import org.springframework.data.relational.core.mapping.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import mywild.wildweather.framework.data.BaseEntity;
 
 @ToString(callSuper = true)
 @Getter
@@ -18,18 +16,11 @@ import mywild.wildweather.framework.data.BaseEntity;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("users")
-public class UserEntity extends BaseEntity {
+public class UserReset {
 
     @NotNull
     @NotBlank
-    @Size(min = 4)
+    @Size(min = 4, message = "user.username.too-short")
     private String username;
-
-    @NotNull
-    @NotBlank
-    private String password;
-
-    private String description;
 
 }

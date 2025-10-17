@@ -11,6 +11,7 @@ spring:
         import: 
             - optional:file:./.env.production[.properties]
             - optional:file:./.env.local[.properties]
+            - optional:file:./.env[.properties]
     sql:
         init:
             mode: always
@@ -79,5 +80,8 @@ mywild:
         concurrent-users-limit: 100
         user-rate-limit: 75
         global-rate-limit: 3000
+    ambient-weather:
+        app-key: ${AMBIENT_WEATHER_APP_KEY}
+        api-key: ${AMBIENT_WEATHER_API_KEY}
     csv:
         folder: ./

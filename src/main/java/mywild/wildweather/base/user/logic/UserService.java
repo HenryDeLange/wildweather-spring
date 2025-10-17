@@ -1,4 +1,4 @@
-package mywild.wildweather.user.logic;
+package mywild.wildweather.base.user.logic;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -11,13 +11,13 @@ import mywild.wildweather.framework.error.BadRequestException;
 import mywild.wildweather.framework.error.ForbiddenException;
 import mywild.wildweather.framework.security.jwt.TokenService;
 import mywild.wildweather.framework.security.jwt.TokenType;
-import mywild.wildweather.user.data.UserEntity;
-import mywild.wildweather.user.data.UserRepository;
-import mywild.wildweather.user.web.Tokens;
-import mywild.wildweather.user.web.UserInfo;
-import mywild.wildweather.user.web.UserLogin;
-import mywild.wildweather.user.web.UserRegister;
-import mywild.wildweather.user.web.UserUpdate;
+import mywild.wildweather.base.user.data.UserEntity;
+import mywild.wildweather.base.user.data.UserRepository;
+import mywild.wildweather.base.user.web.Tokens;
+import mywild.wildweather.base.user.web.UserInfo;
+import mywild.wildweather.base.user.web.UserLogin;
+import mywild.wildweather.base.user.web.UserRegister;
+import mywild.wildweather.base.user.web.UserUpdate;
 
 @Validated
 @Service

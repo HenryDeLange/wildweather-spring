@@ -1,11 +1,13 @@
 package mywild.wildweather.domain.weather.logic;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
+import mywild.ambientweather.openapi.client.api.AmbientWeatherApi;
 
 @Slf4j
 @Service
@@ -19,7 +21,10 @@ public class WeatherApiScheduler {
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;
 
-    @Scheduled(initialDelay = SCHEDULE_DELAY, fixedRate = SCHEDULE_RATE)
+    @Autowired
+    private AmbientWeatherApi api;
+
+    @Scheduled(initialDelay = 1500 /*SCHEDULE_DELAY*/, fixedRate = SCHEDULE_RATE)
     void scheduledApiProcessing() {
         processApiData(false);
     }
@@ -36,7 +41,7 @@ public class WeatherApiScheduler {
             log.info("Looking for API data");
             log.info("*************************");
             // TODO: Download up to date data from the Ambient Weather API and store it in a CSV file myself
-            log.error("TODO");
+            System.out.println(api.devicesGet());
         }
         catch (Exception ex) {
             log.error(ex.getMessage(), ex);

@@ -1,13 +1,13 @@
-package mywild.wildweather.user.logic;
+package mywild.wildweather.base.user.logic;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
-import mywild.wildweather.user.data.UserEntity;
-import mywild.wildweather.user.web.UserInfo;
-import mywild.wildweather.user.web.UserRegister;
-import mywild.wildweather.user.web.UserUpdate;
+import mywild.wildweather.base.user.data.UserEntity;
+import mywild.wildweather.base.user.web.UserInfo;
+import mywild.wildweather.base.user.web.UserRegister;
+import mywild.wildweather.base.user.web.UserUpdate;
 
 @Mapper
 public interface UserMapper {

@@ -1,11 +1,11 @@
-package mywild.wildweather.version.logic;
+package mywild.wildweather.base.version.logic;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import mywild.wildweather.version.web.AppVersion;
+import mywild.wildweather.base.version.web.AppVersion;
 
 @Slf4j
 @Validated

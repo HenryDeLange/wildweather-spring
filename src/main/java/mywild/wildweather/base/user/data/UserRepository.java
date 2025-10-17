@@ -1,4 +1,4 @@
-package mywild.wildweather.user.data;
+package mywild.wildweather.base.user.data;
 
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;

@@ -1,6 +1,5 @@
-package mywild.wildweather.user.web;
+package mywild.wildweather.base.user.web;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,9 +13,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserInfo extends UserBase {
+public class UserUpdate {
 
-    @NotNull
-    private long id;
+    private String description;
 
 }

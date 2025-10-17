@@ -115,7 +115,7 @@
             <optional>true</optional>
         </dependency>
         <!-- OpenAPI client -->
-        <!-- <dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
@@ -133,7 +133,7 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>logging-interceptor</artifactId>
             <version>4.12.0</version>
-        </dependency> -->
+        </dependency>
     </dependencies>
 
     <build>
@@ -185,7 +185,7 @@
                     <commitIdGenerationMode>full</commitIdGenerationMode>
                 </configuration>
             </plugin>
-            <!-- <plugin>
+            <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>7.14.0</version>
@@ -197,10 +197,10 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                                <configHelp>true</configHelp>
+                            <!-- <configHelp>true</configHelp> -->
                             <generatorName>java</generatorName>
                             <library>okhttp-gson</library>
-                            <inputSpec>${project.basedir}/src/main/openapi/ambientWeatherApi.yml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/openapi/ambient-weather-api.yml</inputSpec>
                             <apiPackage>mywild.ambientweather.openapi.client.api</apiPackage>
                             <modelPackage>mywild.ambientweather.openapi.client.model</modelPackage>
                             <configOptions>
@@ -221,7 +221,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin> -->
+            </plugin>
         </plugins>
     </build>
 
@@ -333,9 +333,9 @@
                             <linkXRef>false</linkXRef>
                             <outputDirectory>${project.build.directory}/pmd-report</outputDirectory>
                             <format>html</format>
-                            <!-- <excludes>
+                            <excludes>
                                 <exclude>**/mywild/wildweather/openapi/**/*.java</exclude>
-                            </excludes> -->
+                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>

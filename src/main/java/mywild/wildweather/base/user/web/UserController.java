@@ -1,4 +1,4 @@
-package mywild.wildweather.user.web;
+package mywild.wildweather.base.user.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import mywild.wildweather.framework.security.jwt.JwtUtils;
 import mywild.wildweather.framework.web.BaseController;
-import mywild.wildweather.user.logic.UserService;
+import mywild.wildweather.base.user.logic.UserService;
 
 @Tag(name = "Users", description = "User authentication and identity management.")
 @RestController
