@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import mywild.wildweather.domain.weather.logic.WeatherApiScheduler;
-import mywild.wildweather.domain.weather.logic.WeatherCsvScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler;
+import mywild.wildweather.domain.weather.schedulers.csv.WeatherCsvScheduler;
 import mywild.wildweather.framework.web.BaseController;
 
 @Tag(name = "Admin", description = "Admin actions.")
@@ -20,7 +20,7 @@ public class AdminController extends BaseController {
     @Autowired
     private WeatherApiScheduler apiScheduler;
 
-    @Operation(summary = "Manually trigger the processing of CSV files.")
+    @Operation(summary = "Manually trigger the processing of Ambient Weather CSV files.")
     @PostMapping("/admin/process/csv")
     public void triggerCsvProcessing(@RequestParam(required = false) boolean forceFullReload) {
         if (forceFullReload) {

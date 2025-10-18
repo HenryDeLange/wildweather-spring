@@ -1,4 +1,4 @@
-package mywild.wildweather.domain.weather.logic;
+package mywild.wildweather.domain.weather.schedulers.csv;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,9 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -36,16 +34,18 @@ import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.weather.data.WeatherCategory;
 import mywild.wildweather.domain.weather.data.WeatherEntity;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
+import mywild.wildweather.domain.weather.schedulers.SchedulerThreadFactory;
+import mywild.wildweather.domain.weather.schedulers.Utils;
 
 @Slf4j
 @Service
 public class WeatherCsvScheduler {
 
-    private static final int SCHEDULE_DELAY = 5 * 1000; // 5 seconds
+    private static final int SCHEDULE_DELAY = 2 * 1000; // 2 seconds
     private static final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour
     private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // Every 5 minutes
 
-    private static final Object lock = new Object();
+    private static final Object databaseLock = new Object();
 
     private static final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -70,7 +70,7 @@ public class WeatherCsvScheduler {
     @Async
     public void processCsvFiles() {
         if (!isRunning.compareAndSet(false, true)) {
-            log.warn("Already busy processing files... The new request will be ignored.");
+            log.warn("Already busy processing csv files... The new request will be ignored.");
             return;
         }
         try (Stream<Path> paths = Files.walk(Paths.get(csvRootFolder))) {
@@ -110,7 +110,7 @@ public class WeatherCsvScheduler {
         });
         ExecutorService executor = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors(),
-            new CsvThreadFactory("s-csv-"));
+            new SchedulerThreadFactory("s-csv-"));
         executor.invokeAll(tasks);
         executor.shutdown();
         return fineScaleCsvFiles;
@@ -136,7 +136,7 @@ public class WeatherCsvScheduler {
                         if (!categoryRecord.contains("Datetime")) {
                             var category = WeatherCategory.valueOf(categoryRecord.substring(0, 1));
                             var date = LocalDate.parse(record.get("Date"));
-                            var station = getStationName(csvFile);
+                            var station = Utils.getStationName(csvFile);
                             var temperature = Double.parseDouble(record.get("Outdoor Temperature"));
                             var windSpeed = Double.parseDouble(record.get("Wind Speed"));
                             var windMax = Double.parseDouble(record.get("Max Daily Gust"));
@@ -147,7 +147,7 @@ public class WeatherCsvScheduler {
                             var humidity = Double.parseDouble(record.get("Humidity"));
                             var uvRadiationIndex = Double.parseDouble(record.get("Ultra-Violet Radiation Index"));
                             // TODO: Maybe better to build a map in memory and then save the map once-off after all the tasks are done
-                            synchronized (lock) {
+                            synchronized (databaseLock) {
                                 var entity = repo.findByDateAndStationAndCategory(date, station, category);
                                 if (entity == null) {
                                     repo.save(
@@ -251,7 +251,7 @@ public class WeatherCsvScheduler {
                         for (CSVRecord record : getRecords(reader, headers)) {
                             var dateTime = ZonedDateTime.parse(record.get("Date"));
                             var date = dateTime.toLocalDate();
-                            var station = getStationName(csvFile);
+                            var station = Utils.getStationName(csvFile);
                             var duplicateKey = station + "_" + record.get("Date");
                             if (detectDuplicateRecords.add(duplicateKey)) {
                                 recordsPerDate.compute(new RecordsPerDateKey(station, date), (_, v) -> v == null ? 1 : v + 1);
@@ -287,7 +287,7 @@ public class WeatherCsvScheduler {
         }
         ExecutorService executor = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors(), 
-            new CsvThreadFactory("f-csv-"));
+            new SchedulerThreadFactory("f-csv-"));
         executor.invokeAll(tasks);
         executor.shutdown();
         // Calculate missing percentage
@@ -298,16 +298,16 @@ public class WeatherCsvScheduler {
             var missing = 0;
             for (var entry : recordsPerDate.entrySet()) {
                 try {
-                    var entities = repo.findAllByDateAndStationOrderByDateAscCategoryAsc(entry.getKey().date, entry.getKey().station);
+                    var entities = repo.findAllByDateAndStationOrderByDateAscCategoryAsc(entry.getKey().date(), entry.getKey().station());
                     for (var temp : entities) {
-                        if (temp.getDate().equals(entry.getKey().date)) {
+                        if (temp.getDate().equals(entry.getKey().date())) {
                             if (entry.getValue() < EXPECTED_RECORDS_PER_DAY) {
                                 temp.setMissing(Math.round((EXPECTED_RECORDS_PER_DAY - entry.getValue()) / (double) EXPECTED_RECORDS_PER_DAY * 100.0));
                                 missing++;
                             }
                             else if (entry.getValue() > EXPECTED_RECORDS_PER_DAY) {
                                 log.warn("More days counted ({}) than expected ({}) for : {} on {}", 
-                                    entry.getValue(), EXPECTED_RECORDS_PER_DAY, entry.getKey().station, entry.getKey().date);
+                                    entry.getValue(), EXPECTED_RECORDS_PER_DAY, entry.getKey().station(), entry.getKey().date());
                             }
                         }
                     }
@@ -391,44 +391,8 @@ public class WeatherCsvScheduler {
         return records;
     }
 
-    private String getStationName(Path path) {
-        var stationPath = path.getParent();
-        if (stationPath == null) {
-            return "UNKNOWN";
-        }
-        var stationName = stationPath.getFileName();
-        if (stationName == null) {
-            return "UNKNOWN";
-        }
-        return stationName.toString();
-    }
-
     private String getCsvName(Path path) {
-        return getStationName(path) + " -> " + path.getFileName();
-    }
-
-    private record RecordsPerDateKey(
-        String station,
-        LocalDate date
-    ) {
-       // Record automatically generates: equals, hashCode and toString
-    }
-
-    private class CsvThreadFactory implements ThreadFactory {
-        
-        private final AtomicInteger counter = new AtomicInteger(1);
-
-        private final String name;
-
-        CsvThreadFactory(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public Thread newThread(Runnable runnable) {
-            return new Thread(runnable, String.format(name + "%02d", counter.getAndIncrement()));
-        }
-
+        return Utils.getStationName(path) + " -> " + path.getFileName();
     }
 
 }

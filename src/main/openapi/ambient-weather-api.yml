@@ -171,7 +171,8 @@ paths:
     get:
       tags:
       - Ambient Weather
-      summary: List devices
+      summary: List devices information
+      operationId: getDevices
       description: Returns all devices associated with the given API key.
       security:
         - ApiKeyAuth: []
@@ -189,8 +190,10 @@ paths:
   /devices/{macAddress}:
     get:
       tags:
-      - Weather
-      summary: Get weather date for the given device.
+      - Ambient Weather
+      summary: Get device's weather data
+      operationId: getDeviceData
+      description: Get weather date for the given device.
       parameters:
         - name: macAddress
           in: path

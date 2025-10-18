@@ -119,7 +119,7 @@ paths:
     post:
       tags:
       - Admin
-      summary: Manually trigger the processing of CSV files.
+      summary: Manually trigger the processing of Ambient Weather CSV files.
       operationId: triggerCsvProcessing
       parameters:
       - name: forceFullReload
