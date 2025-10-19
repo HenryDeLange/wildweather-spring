@@ -79,7 +79,7 @@ public class WeatherApiScheduler {
                             readRecords++;
                         }
                         apiEndDate = data.get(data.size() - 1).getDate();
-                        Thread.sleep(Duration.ofSeconds(1));
+                        Thread.sleep(Duration.ofSeconds(2));
                     }
                     while (mostRecentDatabaseDate.isEqual(apiEndDate.toLocalDate())
                         || mostRecentDatabaseDate.isBefore(apiEndDate.toLocalDate()));
