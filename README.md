@@ -1,8 +1,15 @@
-# wildweather-spring
+# WildWeather Server
 
-The WildWeather server is responsible for processing the Ambient Weather files containing historic weather conditions for my personal weather stations.
+![App Version](https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2FHenryDeLange%2Fwildweather-spring%2Fmain%2Fpom.xml&query=%2F*%5Blocal-name()%3D'project'%5D%2F*%5Blocal-name()%3D'version'%5D&label=version)
+![GitHub License](https://img.shields.io/github/license/HenryDeLange/wildweather-spring)
+
+The WildWeather Server is responsible for processing Ambient Weather files containing historic weather records form my personal weather stations.
 
 ## Development
+
+![Top Language](https://img.shields.io/github/languages/top/HenryDeLange/wildweather-spring)
+![Maven Build](https://img.shields.io/github/actions/workflow/status/HenryDeLange/wildweather-spring/spring-source-build.yml?label=build)
+![Release](https://img.shields.io/github/actions/workflow/status/HenryDeLange/wildweather-spring/spring-release-build.yml?label=release)
 
 This project is a standard _Java_ _Spring Boot_ application that uses _Maven_ as the build tool.
 
@@ -14,6 +21,7 @@ This project is a standard _Java_ _Spring Boot_ application that uses _Maven_ as
 
 - [Java JDK 25 Lite](https://bell-sw.com/pages/downloads/)
 - [Maven 3.9.9](https://maven.apache.org/)
+- [Encryption Keys](#encryption-keys)
 
 ### Maven Commands
 
@@ -21,7 +29,7 @@ Action | Command
 -|-
 Build | `./mvnw clean verify`
 Run | `./mvnw spring-boot:run`
-Code Analyses | `./mvnw clean verify -P report` and then `./mvnw site -P report`. View results on the [Maven Site](./target/site/index.html) webpage.
+Code Analyses | `./mvnw clean verify -P report` and then `./mvnw site -P report`. View the results on the [Maven Site](./target/site/index.html).
 
 ### Docker Commands
 
@@ -45,6 +53,22 @@ The production artifact will be the [wildweather-app.jar](./target/wildweather-a
 
 See [licenses.xml](target/generated-resources/licenses.xml) for license details.
 
+## Configuration
+
+### Application Properties
+
+See the _Spring Boot_ [application.yml](./src/main/resources/application.yml) configuration file.
+
+### Environment Variables
+
+See the [.env.production](./.env.production) file.
+
+Note that the other _.env_ files are used during development.
+
+### Localisation
+
+See the [messages_en.properties](./src/main/resources/messages_en.properties) and related files.
+
 ## Encryption Keys
 
 _Note: This project comes with already generated development keys, however any production deployment should use newly generated keys._
@@ -66,5 +90,4 @@ openssl rsa -in ./keys/jwt/private_key.pem -outform PEM -pubout -out ./keys/jwt/
 openssl pkcs8 -topk8 -inform PEM -in ./keys/jwt/private_key.pem -outform PEM -nocrypt -out ./keys/jwt/private_key_pkcs8.pem
 ```
 
-Then copy the [private_key_pkcs8.pem](./keys/jwt/private_key_pkcs8.pem) and [public_key.pem](./keys/jwt/public_key.pem) values into the relevant `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` environment variables respectively in the [.env.local](./.env.local) file for development, or set it in the production configuration.
-
+Then copy the [private_key_pkcs8.pem](./keys/jwt/private_key_pkcs8.pem) and [public_key.pem](./keys/jwt/public_key.pem) values into the relevant `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` environment variables respectively in the [.env.local](./.env.local) file for development, or set it in the production container's configuration.

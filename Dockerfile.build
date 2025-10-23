@@ -1,0 +1,2 @@
+FROM bellsoft/liberica-runtime-container:jdk-25-musl
+WORKDIR /app
