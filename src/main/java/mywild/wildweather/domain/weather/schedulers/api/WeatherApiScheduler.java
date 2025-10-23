@@ -40,7 +40,8 @@ public class WeatherApiScheduler {
     @Autowired
     private WeatherRepository repo;
 
-    @Scheduled(initialDelay = 10000 /*SCHEDULE_DELAY*/, fixedRate = SCHEDULE_RATE)
+    // TODO: Enable once this is fully implemented
+    // @Scheduled(initialDelay = 10000 /*SCHEDULE_DELAY*/, fixedRate = SCHEDULE_RATE)
     void scheduledApiProcessing() {
         processApiData(false);
     }

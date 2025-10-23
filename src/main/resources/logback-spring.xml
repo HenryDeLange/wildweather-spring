@@ -13,11 +13,10 @@
         </encoder>
     </appender>
 
-    <!--
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>./data/logs/app.log</file>
+        <file>./logs/app.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>./data/logs/app.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>./logs/app.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>16MB</maxFileSize>
             <maxHistory>5</maxHistory>
         </rollingPolicy>
@@ -25,11 +24,10 @@
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    -->
 
     <root level="${LOG_LEVEL_ROOT}">
         <appender-ref ref="CONSOLE" />
-        <!-- <appender-ref ref="FILE" /> -->
+        <appender-ref ref="FILE" />
     </root>
 
 </configuration>

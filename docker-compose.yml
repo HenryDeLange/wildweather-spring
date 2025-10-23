@@ -17,6 +17,7 @@ services:
     ports:
       - 8080:8080
     volumes:
+      - ./logs:/app/logs
       - C:\\Users\\henry\\OneDrive\\Ambient Weather:/app/weather
     env_file:
       - ./.env.local

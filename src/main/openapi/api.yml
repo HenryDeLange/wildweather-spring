@@ -8,8 +8,7 @@ externalDocs:
   description: Download OpenAPI YAML Specification
   url: /v3/api-docs.yaml
 servers:
-- url: http://localhost:8080
-  description: Generated server url
+- url: /
 security:
 - bearerAuth: []
 - Accept-Language: []

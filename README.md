@@ -5,11 +5,13 @@
 
 The WildWeather Server is responsible for processing Ambient Weather files containing historic weather records form my personal weather stations.
 
+[😶‍🌫️ Live API](https://server.mywild.co.za/wildweather-api)
+
+See the [wildweather-react](https://github.com/HenryDeLange/wildweather-react) project for the web UI.
+
 ## Development
 
-![Top Language](https://img.shields.io/github/languages/top/HenryDeLange/wildweather-spring)
-![Maven Build](https://img.shields.io/github/actions/workflow/status/HenryDeLange/wildweather-spring/spring-source-build.yml?label=build)
-![Release](https://img.shields.io/github/actions/workflow/status/HenryDeLange/wildweather-spring/spring-release-build.yml?label=release)
+![Build](https://img.shields.io/github/actions/workflow/status/HenryDeLange/wildweather-spring/spring-source-build.yml?label=build)
 
 This project is a standard _Java_ _Spring Boot_ application that uses _Maven_ as the build tool.
 
@@ -41,7 +43,13 @@ Stop | `docker compose down`
 
 ## Release
 
-### Maven Build
+![Release](https://img.shields.io/github/actions/workflow/status/HenryDeLange/wildweather-spring/spring-release-build.yml?label=release)
+
+### Publish To GitHub Releases and Packages
+
+Run the [spring-release-build.yml](./.github/workflows/spring-release-build.yml) _Github Action_.
+
+### Manual Maven Build
 
 Use the below command to build a production ready artifact.
 
@@ -52,6 +60,14 @@ The production artifact will be the [wildweather-app.jar](./target/wildweather-a
 #### Dependency Licenses
 
 See [licenses.xml](target/generated-resources/licenses.xml) for license details.
+
+#### Code Report
+
+A code report for `SpotBugs`, `PMD` and `CPD` can be generated using the below commands:\
+`./mvnw clean verify -P report`\
+`./mvnw site -P report`
+
+To view the results of the code analysis open the [Maven Site](./target/site/index.html) webpage.
 
 ## Configuration
 
