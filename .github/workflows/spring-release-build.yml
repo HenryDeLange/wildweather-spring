@@ -36,9 +36,7 @@ jobs:
 
             - name: Commit version bump and tag
               run: |
-                git config user.name "github-actions"
-                git config user.email "github-actions@github.com"
-                git add pom.xml */pom.xml
+                git add pom.xml
                 git commit -m "Set version to $VERSION"
                 git tag ${{ github.event.inputs.version }}
                 git push origin HEAD:main --tags
