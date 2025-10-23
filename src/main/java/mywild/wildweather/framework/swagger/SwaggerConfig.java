@@ -31,7 +31,7 @@ public class SwaggerConfig {
                 .version("1.0.0"))
             .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
             .addSecurityItem(new SecurityRequirement().addList(langHeaderName))
-            .servers(List.of(new Server().url("/")))
+            .servers(List.of(new Server().url(contextPath + "/")))
             .components(new Components()
                     .addSecuritySchemes(securitySchemeName,
                         new SecurityScheme()
