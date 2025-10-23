@@ -56,7 +56,7 @@ logging:
         # Spring default log level (affects the application - both console and file)
         root: INFO
         # Used in the logback-spring.xml to set a lower (than root) log level for the console
-        console: ERROR
+        console: INFO
         # Overwrite log level for specific code packages
         mywild: INFO
 
