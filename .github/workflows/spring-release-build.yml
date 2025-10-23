@@ -1,4 +1,4 @@
-name: Build and Publish Spring Boot Artifact and Docker Image
+name: Release Spring Boot Artifact and Docker Image
 
 on:
     workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
         runs-on: ubuntu-latest
 
         permissions:
-          contents: read
+          contents: write
           packages: write
 
         steps:
@@ -39,8 +39,6 @@ jobs:
             
             - name: Create GitHub Tag
               run: |
-                git config user.name "github-actions"
-                git config user.email "github-actions@github.com"
                 git tag ${{ github.event.inputs.version }}
                 git push origin ${{ github.event.inputs.version }}
             
