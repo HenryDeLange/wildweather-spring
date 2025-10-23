@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
       inputs:
         version:
-          description: 'Release version (e.g. v1.2.3)'
+          description: 'Release version (e.g. 1.2.3)'
           required: true
     # push:
     #   tags:
@@ -31,28 +31,28 @@ jobs:
             
             - name: Set Maven version
               run: |
-                echo "VERSION=${{ github.event.inputs.version }}" | sed 's/^v//' >> $GITHUB_ENV
-                mvn versions:set -DnewVersion=$VERSION
+                mvn versions:set -DnewVersion=${{ github.event.inputs.version }} -DgenerateBackupPoms=false
+            
+            - name: Build with Maven
+              run: mvn -B -ntp clean verify -P prod
 
-            - name: Commit version bump and tag
+            - name: Commit version bump and create tag
               run: |
                 git config user.name "github-actions"
                 git config user.email "github-actions@github.com"
                 git add pom.xml
-                git commit -m "Set version to $VERSION"
-                git tag ${{ github.event.inputs.version }}
-                git push origin HEAD:main --tags
-
-            - name: Build with Maven
-              run: mvn -B clean verify -P prod
+                git commit -m "Set version to ${{ github.event.inputs.version }}"
+                git push origin HEAD:main
+                git tag v${{ github.event.inputs.version }}
+                git push origin v${{ github.event.inputs.version }}
             
             - name: Create GitHub Release
               uses: actions/create-release@v1
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                tag_name: ${{ github.event.inputs.version }}
-                release_name: Release ${{ github.event.inputs.version }}
+                tag_name: v${{ github.event.inputs.version }}
+                release_name: Release v${{ github.event.inputs.version }}
                 draft: false
                 prerelease: false
 
@@ -76,4 +76,4 @@ jobs:
                 tags: ghcr.io/${{ env.OWNER_LC }}/${{ env.REPO_LC }}:latest
                 # tags: |
                 #   ghcr.io/${{ env.OWNER_LC }}/${{ env.REPO_LC }}:latest
-                #   ghcr.io/${{ env.OWNER_LC }}/${{ env.REPO_LC }}:${{ env.VERSION }}
+                #   ghcr.io/${{ env.OWNER_LC }}/${{ env.REPO_LC }}:${{ github.event.inputs.version }}
