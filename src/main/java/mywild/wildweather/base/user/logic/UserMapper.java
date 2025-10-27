@@ -4,10 +4,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
-import mywild.wildweather.base.user.data.UserEntity;
-import mywild.wildweather.base.user.web.UserInfo;
-import mywild.wildweather.base.user.web.UserRegister;
-import mywild.wildweather.base.user.web.UserUpdate;
+import mywild.wildweather.base.user.data.entity.UserEntity;
+import mywild.wildweather.base.user.web.dto.UserInfo;
+import mywild.wildweather.base.user.web.dto.UserRegister;
+import mywild.wildweather.base.user.web.dto.UserUpdate;
 
 @Mapper
 public interface UserMapper {

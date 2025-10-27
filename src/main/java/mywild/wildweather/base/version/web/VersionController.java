@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import mywild.wildweather.framework.web.BaseController;
 import mywild.wildweather.base.version.logic.VersionService;
+import mywild.wildweather.base.version.web.dto.AppVersion;
 
 @Tag(name = "Application Information", description = "Version information of the server.")
 @RestController

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import mywild.wildweather.base.version.web.AppVersion;
+import mywild.wildweather.base.version.web.dto.AppVersion;
 
 @Slf4j
 @Validated

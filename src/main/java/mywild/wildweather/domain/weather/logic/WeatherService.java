@@ -15,13 +15,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import mywild.wildweather.domain.weather.data.WeatherCategory;
-import mywild.wildweather.domain.weather.data.WeatherEntity;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
-import mywild.wildweather.domain.weather.web.WeatherAggregate;
-import mywild.wildweather.domain.weather.web.WeatherDataDto;
-import mywild.wildweather.domain.weather.web.WeatherField;
-import mywild.wildweather.domain.weather.web.WeatherGrouping;
+import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
+import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
+import mywild.wildweather.domain.weather.web.dto.WeatherAggregate;
+import mywild.wildweather.domain.weather.web.dto.WeatherDataDto;
+import mywild.wildweather.domain.weather.web.dto.WeatherField;
+import mywild.wildweather.domain.weather.web.dto.WeatherGrouping;
+import mywild.wildweather.domain.weather.web.dto.WeatherStatusDto;
 
 @Slf4j
 @Validated
@@ -122,6 +123,19 @@ public class WeatherService {
 
     public List<String> getWeatherStations() {
         return repo.findStations();
+    }
+
+    public List<WeatherStatusDto> getWeatherStatus() {
+        var stations = repo.findStations();
+        return stations.stream()
+            .<WeatherStatusDto>map(station -> {
+                var date = repo.findTopDateByStation(station);
+                return WeatherStatusDto.builder()
+                    .station(station)
+                    .lastProcessedOn(date)
+                    .build();
+            })
+            .toList();
     }
 
 }

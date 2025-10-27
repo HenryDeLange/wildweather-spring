@@ -1,4 +1,4 @@
-package mywild.wildweather.domain.weather.data;
+package mywild.wildweather.domain.weather.data.entity;
 
 public enum WeatherCategory {
     L, // Low

@@ -1,4 +1,4 @@
-package mywild.wildweather.domain.weather.data;
+package mywild.wildweather.domain.weather.data.entity;
 
 import java.time.LocalDate;
 import org.springframework.data.relational.core.mapping.Table;

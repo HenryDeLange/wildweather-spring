@@ -11,13 +11,13 @@ import mywild.wildweather.framework.error.BadRequestException;
 import mywild.wildweather.framework.error.ForbiddenException;
 import mywild.wildweather.framework.security.jwt.TokenService;
 import mywild.wildweather.framework.security.jwt.TokenType;
-import mywild.wildweather.base.user.data.UserEntity;
 import mywild.wildweather.base.user.data.UserRepository;
-import mywild.wildweather.base.user.web.Tokens;
-import mywild.wildweather.base.user.web.UserInfo;
-import mywild.wildweather.base.user.web.UserLogin;
-import mywild.wildweather.base.user.web.UserRegister;
-import mywild.wildweather.base.user.web.UserUpdate;
+import mywild.wildweather.base.user.data.entity.UserEntity;
+import mywild.wildweather.base.user.web.dto.Tokens;
+import mywild.wildweather.base.user.web.dto.UserInfo;
+import mywild.wildweather.base.user.web.dto.UserLogin;
+import mywild.wildweather.base.user.web.dto.UserRegister;
+import mywild.wildweather.base.user.web.dto.UserUpdate;
 
 @Validated
 @Service

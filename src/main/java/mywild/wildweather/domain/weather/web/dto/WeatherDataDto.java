@@ -1,4 +1,4 @@
-package mywild.wildweather.domain.weather.web;
+package mywild.wildweather.domain.weather.web.dto;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import mywild.wildweather.domain.weather.data.WeatherCategory;
+import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
 
 @ToString(callSuper = true)
 @Getter

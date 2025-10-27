@@ -31,9 +31,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
-import mywild.wildweather.domain.weather.data.WeatherCategory;
-import mywild.wildweather.domain.weather.data.WeatherEntity;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
+import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
+import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
 import mywild.wildweather.domain.weather.schedulers.SchedulerThreadFactory;
 import mywild.wildweather.domain.weather.schedulers.Utils;
 
