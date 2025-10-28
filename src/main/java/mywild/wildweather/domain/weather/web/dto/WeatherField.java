@@ -20,4 +20,13 @@ public enum WeatherField {
 
     private String key;
 
+    public static WeatherField fromKey(String key) {
+        for (WeatherField field : WeatherField.values()) {
+            if (field.getKey().equals(key)) {
+                return field;
+            }
+        }
+        return null;
+    }
+
 }
