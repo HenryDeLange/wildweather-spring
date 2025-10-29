@@ -6,6 +6,8 @@ import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
+import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
 
 @Repository
 public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {

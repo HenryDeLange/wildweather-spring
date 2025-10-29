@@ -10,8 +10,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import mywild.wildweather.domain.weather.data.WeatherCategory;
+import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
 import mywild.wildweather.domain.weather.logic.WeatherService;
+import mywild.wildweather.domain.weather.web.dto.WeatherAggregate;
+import mywild.wildweather.domain.weather.web.dto.WeatherDataDto;
+import mywild.wildweather.domain.weather.web.dto.WeatherField;
+import mywild.wildweather.domain.weather.web.dto.WeatherGrouping;
+import mywild.wildweather.domain.weather.web.dto.WeatherStatusDto;
 import mywild.wildweather.framework.error.BadRequestException;
 import mywild.wildweather.framework.web.BaseController;
 
@@ -48,6 +53,12 @@ public class WeatherController extends BaseController {
     @GetMapping("/weather/stations")
     public List<String> getWeatherStations() {
         return service.getWeatherStations();
+    }
+
+    @Operation(summary = "Returns the status information for all weather stations.")
+    @GetMapping("/weather/status")
+    public List<WeatherStatusDto> getWeatherStatus() {
+        return service.getWeatherStatus();
     }
 
 }

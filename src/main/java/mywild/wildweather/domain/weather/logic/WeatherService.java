@@ -15,13 +15,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import mywild.wildweather.domain.weather.data.WeatherCategory;
-import mywild.wildweather.domain.weather.data.WeatherEntity;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
-import mywild.wildweather.domain.weather.web.WeatherAggregate;
-import mywild.wildweather.domain.weather.web.WeatherDataDto;
-import mywild.wildweather.domain.weather.web.WeatherField;
-import mywild.wildweather.domain.weather.web.WeatherGrouping;
+import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
+import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
+import mywild.wildweather.domain.weather.web.dto.WeatherAggregate;
+import mywild.wildweather.domain.weather.web.dto.WeatherDataDto;
+import mywild.wildweather.domain.weather.web.dto.WeatherField;
+import mywild.wildweather.domain.weather.web.dto.WeatherGrouping;
+import mywild.wildweather.domain.weather.web.dto.WeatherStatusDto;
 
 @Slf4j
 @Validated
@@ -44,14 +45,45 @@ public class WeatherService {
         FIELD_EXTRACTORS = Collections.unmodifiableMap(fieldMappings);
     }
 
-    private static double mapDirection(String direction) {
+    private static Double mapDirection(String direction) {
         if (direction == null || direction.isBlank())
             return 0.0;
-        return Double.parseDouble(direction
-            .replace('N', '1')
-            .replace('E', '2')
-            .replace('S', '3')
-            .replace('W', '4'));
+        switch (direction) {
+            case "N":
+                return 0.0;
+            case "NNE":
+                return 22.5;
+            case "NE":
+                return 45.0;
+            case "ENE":
+                return 67.5;
+            case "E":
+                return 90.0;
+            case "ESE":
+                return 112.5;
+            case "SE":
+                return 135.0;
+            case "SSE":
+                return 157.5;
+            case "S":
+                return 180.0;
+            case "SSW":
+                return 202.5;
+            case "SW":
+                return 225.0;
+            case "WSW":
+                return 247.5;
+            case "W":
+                return 270.0;
+            case "WNW":
+                return 292.5;
+            case "NW":
+                return 315.0;
+            case "NNW":
+                return 337.5;
+            default:
+                return Double.NEGATIVE_INFINITY;
+        }
     }
 
     @Autowired
@@ -74,54 +106,100 @@ public class WeatherService {
             WeatherAggregate aggregate,
             Set<WeatherField> weatherFields,
             List<WeatherEntity> entities) {
+        var calcAverage = (aggregate == null || aggregate == WeatherAggregate.AVERAGE);
         Map<String, Integer> daysPerGroup = new HashMap<>();
+        Map<String, Integer> daysWithDataPerGroup = new HashMap<>();
         var weatherData = new WeatherDataDto();
-        for (var entity : entities) {
-            var station = entity.getStation();
-            var year = entity.getDate().getYear();
-            var group = grouping == WeatherGrouping.DAILY ? entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
-                : grouping == WeatherGrouping.WEEKLY ? String.format("%02d", entity.getDate().get(WeekFields.ISO.weekOfYear()))
-                : grouping == WeatherGrouping.MONTHLY ? String.format("%02d", entity.getDate().getMonthValue())
-                : grouping == WeatherGrouping.YEARLY ? String.valueOf(entity.getDate().getYear())
-                    : entity.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
-            var category = entity.getCategory();
+        for (var weatherDay : entities) {
+            var station = weatherDay.getStation();
+            var year = weatherDay.getDate().getYear();
+            var group = grouping == WeatherGrouping.DAILY ? weatherDay.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                : grouping == WeatherGrouping.WEEKLY ? String.format("%02d", weatherDay.getDate().get(WeekFields.ISO.weekOfYear()))
+                : grouping == WeatherGrouping.MONTHLY ? String.format("%02d", weatherDay.getDate().getMonthValue())
+                : grouping == WeatherGrouping.YEARLY ? String.valueOf(weatherDay.getDate().getYear())
+                    : weatherDay.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+            var category = weatherDay.getCategory();
+            var groupMap = weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
+                        .computeIfAbsent(year, _ -> new LinkedHashMap<>())
+                            .computeIfAbsent(group, _ -> new LinkedHashMap<>());
+            if (category == WeatherCategory.A) {
+                daysPerGroup.merge(getDaysPerGroupKey(station, year, group), 1, Integer::sum);
+                if (weatherDay.getMissing() < 100) {
+                    daysWithDataPerGroup.merge(getDaysPerGroupKey(station, year, group), 1, Integer::sum);
+                }
+            }
             FIELD_EXTRACTORS.forEach((field, extractor) -> {
                 if (weatherFields == null || weatherFields.isEmpty() || weatherFields.contains(field)) {
-                    var value = extractor.apply(entity);
-                    weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
-                        .computeIfAbsent(year, _ -> new LinkedHashMap<>())
-                            .computeIfAbsent(group, _ -> new LinkedHashMap<>())
-                                .computeIfAbsent(field.getKey(), _ -> new LinkedHashMap<>())
-                                    .merge(category, value, (a, b) -> Math.round((a + b) * 10) / 10.0);
+                    var fieldMap = groupMap.computeIfAbsent(field.getKey(), _ -> new LinkedHashMap<>());
+                    if (weatherDay.getMissing() < 100 || field == WeatherField.MISSING) {
+                        var value = extractor.apply(weatherDay);
+                        if (category == WeatherCategory.H) {
+                            fieldMap.merge(category, value, calcAverage ? Math::max : Double::sum);
+                        }
+                        else if (category == WeatherCategory.L) {
+                            fieldMap.merge(category, value, calcAverage ? Math::min : Double::sum);
+                        }
+                        else {
+                            fieldMap.merge(category, value, Double::sum);
+                        }
+                    }
+                    else {
+                        fieldMap.putIfAbsent(category, null);
+                    }
                 }
             });
-            if (grouping != WeatherGrouping.DAILY
-                    && (aggregate == null || aggregate == WeatherAggregate.AVERAGE)
-                    && entity.getCategory() == WeatherCategory.A) {
-                String daysPerGroupKey = station + "-" + year + "-" + group;
-                daysPerGroup.merge(daysPerGroupKey, 1, Integer::sum);
-            }
         }
-        if (!daysPerGroup.isEmpty()) {
-            weatherData.getWeather().forEach((station, yearMap) -> {
-                yearMap.forEach((year, groupMap) -> {
-                    groupMap.forEach((group, fieldMap) -> {
-                        fieldMap.forEach((_, categoryMap) -> {
-                            categoryMap.replaceAll((_, total) -> {
-                                String daysPerGroupKey = station + "-" + year + "-" + group;
-                                Integer days = daysPerGroup.getOrDefault(daysPerGroupKey, 1);
-                                return Math.round(total / (double) days * 10.0) / 10.0;
-                            });
+        weatherData.getWeather().forEach((station, yearMap) -> {
+            yearMap.forEach((year, groupMap) -> {
+                groupMap.forEach((group, fieldMap) -> {
+                    fieldMap.forEach((field, categoryMap) -> {
+                        categoryMap.replaceAll((category, total) -> {
+                            if (total != null) {
+                                if (calcAverage && category == WeatherCategory.A) {
+                                    Integer days;
+                                    if (WeatherField.fromKey(field) == WeatherField.MISSING) {
+                                        days = daysPerGroup.getOrDefault(getDaysPerGroupKey(station, year, group), 1);
+                                    }
+                                    else {
+                                        days = daysWithDataPerGroup.getOrDefault(getDaysPerGroupKey(station, year, group), 1);
+                                    }
+                                    return Math.round(total / (double) days * 10.0) / 10.0;
+                                }
+                                else {
+                                    return Math.round(total * 10.0) / 10.0;
+                                }
+                            }
+                            else {
+                                return null;
+                            }
                         });
                     });
                 });
             });
-        }
+        });
         return weatherData;
+    }
+
+    private String getDaysPerGroupKey(String station, int year, String group) {
+        String daysPerGroupKey = station + "-" + year + "-" + group;
+        return daysPerGroupKey;
     }
 
     public List<String> getWeatherStations() {
         return repo.findStations();
+    }
+
+    public List<WeatherStatusDto> getWeatherStatus() {
+        var stations = repo.findStations();
+        return stations.stream()
+            .<WeatherStatusDto>map(station -> {
+                var date = repo.findTopDateByStation(station);
+                return WeatherStatusDto.builder()
+                    .station(station)
+                    .lastProcessedOn(date)
+                    .build();
+            })
+            .toList();
     }
 
 }

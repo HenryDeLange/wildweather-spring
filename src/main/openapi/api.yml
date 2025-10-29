@@ -233,6 +233,21 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/WeatherDataDto"
+  /api/v1/weather/status:
+    get:
+      tags:
+      - Weather
+      summary: Returns the status information for all weather stations.
+      operationId: getWeatherStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeatherStatusDto"
   /api/v1/weather/stations:
     get:
       tags:
@@ -331,6 +346,19 @@ components:
                     format: double
       required:
       - weather
+    WeatherStatusDto:
+      type: object
+      properties:
+        station:
+          type: string
+          minLength: 1
+        lastProcessedOn:
+          type: string
+          format: date
+          minLength: 1
+      required:
+      - lastProcessedOn
+      - station
     AppVersion:
       type: object
       properties:

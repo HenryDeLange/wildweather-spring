@@ -13,6 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import mywild.wildweather.framework.security.jwt.JwtUtils;
 import mywild.wildweather.framework.web.BaseController;
 import mywild.wildweather.base.user.logic.UserService;
+import mywild.wildweather.base.user.web.dto.Tokens;
+import mywild.wildweather.base.user.web.dto.UserInfo;
+import mywild.wildweather.base.user.web.dto.UserLogin;
+import mywild.wildweather.base.user.web.dto.UserRegister;
+import mywild.wildweather.base.user.web.dto.UserUpdate;
 
 @Tag(name = "Users", description = "User authentication and identity management.")
 @RestController

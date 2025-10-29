@@ -1,4 +1,4 @@
-package mywild.wildweather.domain.weather.web;
+package mywild.wildweather.domain.weather.web.dto;
 
 public enum WeatherGrouping {
     DAILY,

@@ -1,4 +1,4 @@
-package mywild.wildweather.domain.weather.web;
+package mywild.wildweather.domain.weather.web.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,5 +19,14 @@ public enum WeatherField {
     ;
 
     private String key;
+
+    public static WeatherField fromKey(String key) {
+        for (WeatherField field : WeatherField.values()) {
+            if (field.getKey().equals(key)) {
+                return field;
+            }
+        }
+        return null;
+    }
 
 }

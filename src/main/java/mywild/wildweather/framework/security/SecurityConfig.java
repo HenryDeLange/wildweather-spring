@@ -25,6 +25,9 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Value("${mywild.app.dev-mode}")
     private boolean devMode;
 
+    @Value("${spring.h2.console.path}")
+    private String h2Console;
+
     @Value("${mywild.cors}")
     private String cors;
 
@@ -64,15 +67,16 @@ public class SecurityConfig implements WebMvcConfigurer {
                     // Root UI
                     .requestMatchers("/").permitAll()
                     .requestMatchers("/index.html").permitAll();
-                // if (devMode) {
-                //     // Nothing
-                // }
+                 if (devMode) {
+                    // H2
+                    authorize.requestMatchers(h2Console + "/**").permitAll();
+                }
                 authorize
                     // Actuator
                     // .requestMatchers("/actuator/**").permitAll()
                     // Swagger UI
-                    // .requestMatchers("/favicon.ico").permitAll()
-                    // .requestMatchers("/index.html").permitAll()
+                    .requestMatchers("/favicon.ico").permitAll()
+                    .requestMatchers("/index.html").permitAll()
                     .requestMatchers("/swagger-ui.html").permitAll()
                     .requestMatchers("/swagger-ui/**").permitAll()
                     .requestMatchers("/v3/api-docs").permitAll()

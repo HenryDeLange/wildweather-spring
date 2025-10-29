@@ -1,16 +1,14 @@
-package mywild.wildweather.base.user.data;
+package mywild.wildweather.domain.weather.web.dto;
 
-import org.springframework.data.relational.core.mapping.Table;
+import java.time.LocalDate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import mywild.wildweather.framework.data.BaseEntity;
 
 @ToString(callSuper = true)
 @Getter
@@ -18,18 +16,14 @@ import mywild.wildweather.framework.data.BaseEntity;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("users")
-public class UserEntity extends BaseEntity {
+public class WeatherStatusDto {
 
     @NotNull
     @NotBlank
-    @Size(min = 4)
-    private String username;
-
+    private String station;
+    
     @NotNull
     @NotBlank
-    private String password;
-
-    private String description;
+    private LocalDate lastProcessedOn;
 
 }

@@ -1,4 +1,4 @@
-package mywild.wildweather.base.user.web;
+package mywild.wildweather.base.user.web.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
