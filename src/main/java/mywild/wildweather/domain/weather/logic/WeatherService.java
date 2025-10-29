@@ -82,7 +82,7 @@ public class WeatherService {
             case "NNW":
                 return 337.5;
             default:
-                return 0.0;
+                return Double.NEGATIVE_INFINITY;
         }
     }
 
