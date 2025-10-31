@@ -125,6 +125,7 @@ public class WeatherCsvScheduler {
         var duplicates = 0;
         var warnings = 0;
         var errors = 0;
+        var missing = csvName.contains("estimates.csv") ? 100 : 0;
         try (var reader = Files.newBufferedReader(csvFile)) {
             String[] headers = getHeaders(reader);
             var isSummaryCsv = headers[0].equals("COL0");
@@ -164,7 +165,7 @@ public class WeatherCsvScheduler {
                                             .pressure(pressure)
                                             .humidity(humidity)
                                             .uvRadiationIndex(uvRadiationIndex)
-                                            .missing(0)
+                                            .missing(missing)
                                         .build()
                                     );
                                     newRecords++;
