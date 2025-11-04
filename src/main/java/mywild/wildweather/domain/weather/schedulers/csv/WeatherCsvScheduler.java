@@ -11,6 +11,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -98,8 +99,9 @@ public class WeatherCsvScheduler {
     private List<Path> processAllSummaryFiles(Stream<Path> paths) throws InterruptedException {
         List<Path> csvFiles = paths
             .filter(Files::isRegularFile)
-            .filter(path -> path.toString().toLowerCase(Locale.getDefault()).endsWith(".csv"))
+            .filter(path -> path.toString().toLowerCase(Locale.ROOT).endsWith(".csv"))
             .filter(path -> !processedCsvFiles.contains(getCsvName(path)))
+            .sorted(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)))
             .toList();
         List<Path> fineScaleCsvFiles = Collections.synchronizedList(new ArrayList<>());
         List<Callable<Void>> tasks = new ArrayList<>();
@@ -129,7 +131,7 @@ public class WeatherCsvScheduler {
         var duplicates = 0;
         var warnings = 0;
         var errors = 0;
-        var missing = csvName.contains("estimates.csv") ? 99.99 : 0;
+        var missing = csvName.startsWith("estimates-") ? 99.99 : 0;
         try (var reader = Files.newBufferedReader(csvFile)) {
             String[] headers = getHeaders(reader);
             var isSummaryCsv = headers[0].equals("COL0");

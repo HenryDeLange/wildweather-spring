@@ -10,8 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import mywild.wildweather.domain.admin.logic.AdminService;
 import mywild.wildweather.domain.admin.web.dto.ApiStatus;
 import mywild.wildweather.domain.admin.web.dto.CsvStatus;
-import mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler;
-import mywild.wildweather.domain.weather.schedulers.csv.WeatherCsvScheduler;
 import mywild.wildweather.framework.web.BaseController;
 
 @Tag(name = "Admin", description = "Admin actions.")
@@ -39,7 +37,7 @@ public class AdminController extends BaseController {
         service.triggerApiProcessing();
     }
 
-    @Operation(summary = "Status of processing theAmbient Weather API data.")
+    @Operation(summary = "Status of processing the Ambient Weather API data.")
     @GetMapping("/admin/process/api")
     public ApiStatus getApiProcessStatus() {
         return service.getApiProcessStatus();
