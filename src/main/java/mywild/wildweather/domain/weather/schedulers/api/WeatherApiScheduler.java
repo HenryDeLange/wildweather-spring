@@ -43,12 +43,15 @@ public class WeatherApiScheduler {
     // TODO: Enable once this is fully implemented
     // @Scheduled(initialDelay = 10000 /*SCHEDULE_DELAY*/, fixedRate = SCHEDULE_RATE)
     void scheduledApiProcessing() {
-        processApiData(false);
+        processApiData();
     }
 
-    // TODO: Also have a once off, manually triggered task that will download all available data (I suspect the CSVs aren't 100% complete)
+    public boolean isRunning() {
+        return isRunning.get();
+    }
+
     @Async
-    public void processApiData(boolean processAllAvailable) {
+    public void processApiData() {
         if (!isRunning.compareAndSet(false, true)) {
             log.warn("Already busy processing api data... The new request will be ignored.");
             return;

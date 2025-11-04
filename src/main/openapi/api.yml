@@ -115,6 +115,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/Tokens"
   /api/v1/admin/process/csv:
+    get:
+      tags:
+      - Admin
+      summary: Status of processing the Ambient Weather CSV files.
+      operationId: getCsvProcessStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CsvStatus"
     post:
       tags:
       - Admin
@@ -130,17 +142,23 @@ paths:
         "200":
           description: OK
   /api/v1/admin/process/api:
+    get:
+      tags:
+      - Admin
+      summary: Status of processing theAmbient Weather API data.
+      operationId: getApiProcessStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiStatus"
     post:
       tags:
       - Admin
       summary: Manually trigger the processing of Ambient Weather API data.
       operationId: triggerApiProcessing
-      parameters:
-      - name: processAllAvailable
-        in: query
-        required: false
-        schema:
-          type: boolean
       responses:
         "200":
           description: OK
@@ -398,6 +416,20 @@ components:
       required:
       - id
       - username
+    CsvStatus:
+      type: object
+      properties:
+        busy:
+          type: boolean
+      required:
+      - busy
+    ApiStatus:
+      type: object
+      properties:
+        busy:
+          type: boolean
+      required:
+      - busy
   securitySchemes:
     bearerAuth:
       type: http
