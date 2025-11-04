@@ -13,7 +13,7 @@
 
     <groupId>mywild</groupId>
     <artifactId>wildweather</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
 
     <name>WildWeather</name>
     <description>WildWeather Server</description>
