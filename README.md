@@ -5,7 +5,7 @@
 
 The WildWeather Server is responsible for processing Ambient Weather files containing historic weather records form my personal weather stations.
 
-[😶‍🌫️ Live API](https://server.mywild.co.za/wildweather-api)
+😶‍🌫️ [Live API](https://server.mywild.co.za/wildweather-api) 😶‍🌫️
 
 See the [wildweather-react](https://github.com/HenryDeLange/wildweather-react) project for the web UI.
 

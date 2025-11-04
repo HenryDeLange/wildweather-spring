@@ -15,6 +15,7 @@ public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
     @Query("""
         SELECT DISTINCT w.station
         FROM "weather" w
+        ORDER BY w.station
         """)
     List<String> findStations();
 
@@ -50,7 +51,13 @@ public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
         String station,
         WeatherCategory category);
     
-    @Query("SELECT w.date FROM \"weather\" w WHERE w.station = :station ORDER BY date DESC LIMIT 1")
+    @Query("""
+        SELECT w.date
+        FROM \"weather\" w
+        WHERE w.station = :station
+        ORDER BY date DESC
+        LIMIT 1
+        """)
     LocalDate findTopDateByStation(
         @Param("station") String station);
 
