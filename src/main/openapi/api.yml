@@ -145,7 +145,7 @@ paths:
     get:
       tags:
       - Admin
-      summary: Status of processing theAmbient Weather API data.
+      summary: Status of processing the Ambient Weather API data.
       operationId: getApiProcessStatus
       responses:
         "200":

@@ -86,73 +86,6 @@ components:
     DeviceData:
       type: object
       properties:
-        dateutc:
-          type: integer
-          description: Epoch timestamp in milliseconds
-        tempf:
-          type: number
-          description: Outdoor temperature (°F)
-        humidity:
-          type: integer
-          description: Outdoor humidity (%)
-        winddir:
-          type: integer
-          description: Wind direction (degrees)
-        windspeedmph:
-          type: number
-          description: Wind speed (mph)
-        windgustmph:
-          type: number
-          description: Wind gust (mph)
-        maxdailygust:
-          type: number
-          description: Max daily wind gust (mph)
-        hourlyrainin:
-          type: number
-          description: Rainfall in the last hour (inches)
-        dailyrainin:
-          type: number
-          description: Rainfall today (inches)
-        weeklyrainin:
-          type: number
-          description: Rainfall this week (inches)
-        monthlyrainin:
-          type: number
-          description: Rainfall this month (inches)
-        yearlyrainin:
-          type: number
-          description: Rainfall this year (inches)
-        totalrainin:
-          type: number
-          description: Lifetime rainfall (inches)
-        baromrelin:
-          type: number
-          description: Relative pressure (inHg)
-        baromabsin:
-          type: number
-          description: Absolute pressure (inHg)
-        tempinf:
-          type: number
-          description: Indoor temperature (°F)
-        humidityin:
-          type: integer
-          description: Indoor humidity (%)
-        uv:
-          type: number
-          description: UV index
-        solarradiation:
-          type: number
-          description: Solar radiation (W/m²)
-        feelsLike:
-          type: number
-          description: Feels-like temperature (°F)
-        dewPoint:
-          type: number
-          description: Dew point (°F)
-        lastRain:
-          type: string
-          format: date-time
-          description: Timestamp of last rain event
         tz:
           type: string
           description: Timezone of the station
@@ -160,6 +93,94 @@ components:
           type: string
           format: date-time
           description: ISO8601 timestamp of the reading
+        dateutc:
+          type: integer
+          description: Epoch timestamp in milliseconds
+        tempf:
+          type: number
+          format: double
+          description: Outdoor temperature (°F)
+        humidity:
+          type: integer
+          description: Outdoor humidity (%)
+        winddir:
+          type: integer
+          description: Wind direction (degrees)
+        winddir_avg10m:
+          type: integer
+          description: Wind direction (degrees), 10 min average
+        windspeedmph:
+          type: number
+          format: double
+          description: Wind speed (mph)
+        windgustmph:
+          type: number
+          format: double
+          description: Wind gust (mph)
+        maxdailygust:
+          type: number
+          format: double
+          description: Max daily wind gust (mph)
+        hourlyrainin:
+          type: number
+          format: double
+          description: Rainfall in the last hour (inches)
+        dailyrainin:
+          type: number
+          format: double
+          description: Rainfall today (inches)
+        weeklyrainin:
+          type: number
+          format: double
+          description: Rainfall this week (inches)
+        monthlyrainin:
+          type: number
+          format: double
+          description: Rainfall this month (inches)
+        yearlyrainin:
+          type: number
+          format: double
+          description: Rainfall this year (inches)
+        totalrainin:
+          type: number
+          format: double
+          description: Lifetime rainfall (inches)
+        baromrelin:
+          type: number
+          format: double
+          description: Relative pressure (inHg)
+        baromabsin:
+          type: number
+          format: double
+          description: Absolute pressure (inHg)
+        tempinf:
+          type: number
+          format: double
+          description: Indoor temperature (°F)
+        humidityin:
+          type: number
+          format: double
+          description: Indoor humidity (%)
+        uv:
+          type: number
+          format: double
+          description: UV index
+        solarradiation:
+          type: number
+          format: double
+          description: Solar radiation (W/m²)
+        feelsLike:
+          type: number
+          format: double
+          description: Feels-like temperature (°F)
+        dewPoint:
+          type: number
+          format: double
+          description: Dew point (°F)
+        lastRain:
+          type: string
+          format: date-time
+          description: Timestamp of last rain event
       additionalProperties: true
 
 security:

@@ -8,8 +8,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,13 +25,18 @@ import mywild.ambientweather.openapi.client.api.AmbientWeatherApi;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 import mywild.wildweather.domain.weather.schedulers.Utils;
 
+/**
+ * https://ambientweather.docs.apiary.io/
+ * https://github.com/ambient-weather/api-docs/wiki/Device-Data-Specs
+ */
+
 @Slf4j
 @Service
 public class WeatherApiScheduler {
 
-    private static final int SCHEDULE_DELAY = 1 * 60 * 1000; // 5 minutes
+    private static final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
     private static final int SCHEDULE_RATE = 1 * 60 * 60 * 1000; // 1 hours
-    private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // Every 5 minutes
+    private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // 288 (Every 5 minutes)
 
     private static final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -40,8 +49,7 @@ public class WeatherApiScheduler {
     @Autowired
     private WeatherRepository repo;
 
-    // TODO: Enable once this is fully implemented
-    // @Scheduled(initialDelay = 10000 /*SCHEDULE_DELAY*/, fixedRate = SCHEDULE_RATE)
+    @Scheduled(initialDelay = SCHEDULE_DELAY, fixedRate = SCHEDULE_RATE)
     void scheduledApiProcessing() {
         processApiData();
     }
@@ -68,22 +76,58 @@ public class WeatherApiScheduler {
                 var station = Utils.getStationName(macAddressPath);
                 LocalDate mostRecentDatabaseDate = repo.findTopDateByStation(station);
                 var readRecords = 0;
+                var processedDays = 0;
                 try (var reader = Files.newBufferedReader(macAddressPath)) {
                     var stationMacAddress = reader.readLine();
                     log.info("----------------");
                     log.info("Processing API : {}", station);
-                    OffsetDateTime apiEndDate = OffsetDateTime.now(ZoneOffset.UTC);
+                    OffsetDateTime apiEndDate = LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC).minusSeconds(1); // Yesterday midnight
                     do {
-                        log.info("   Fetching data for : {}", apiEndDate);
-                        var data = api.getDeviceData(stationMacAddress, apiEndDate, null);
-                        for (var dataRecord : data) {
-
-                            // TODO: Process the dataRecord calculate daily A/H/L and convert to metric units
-
-                            readRecords++;
+                        var summaryCsvPath = CsvWriter.getCsvPath(macAddressPath.getParent(), apiEndDate.toLocalDateTime());
+                        if (!Files.exists(summaryCsvPath)) {
+                            // Fetch the API data
+                            log.info("   Fetching data for : {}", apiEndDate.toLocalDate());
+                            var data = api.getDeviceData(stationMacAddress, apiEndDate, EXPECTED_RECORDS_PER_DAY);
+                            // Calculate the daily low/ave/high values
+                            Map<Integer, Double> low = new LinkedHashMap<>();
+                            Map<Integer, Double> high = new LinkedHashMap<>();
+                            Map<Integer, List<Double>> average = new LinkedHashMap<>();
+                            for (var dataRecord : data) {
+                                if (dataRecord.getDate().toLocalDate().equals(apiEndDate.toLocalDate())) {
+                                    processValue(low, high, average, 0, Conversions.fahToCel(dataRecord.getTempf()));
+                                    processValue(low, high, average, 1, Conversions.mphToKmh(dataRecord.getWindspeedmph()));
+                                    processValue(low, high, average, 2, Conversions.mphToKmh(dataRecord.getWindgustmph()));
+                                    processValue(low, high, average, 3, dataRecord.getWinddir());
+                                    processValue(low, high, average, 4, Conversions.inToMm(dataRecord.getHourlyrainin()));
+                                    processValue(low, high, average, 5, Conversions.inToMm(dataRecord.getDailyrainin()));
+                                    processValue(low, high, average, 6, Conversions.inHgToHpa(dataRecord.getBaromrelin()));
+                                    processValue(low, high, average, 7, dataRecord.getHumidity());
+                                    processValue(low, high, average, 8, dataRecord.getUv());
+                                    readRecords++;
+                                }
+                                else {
+                                    log.debug("   Not processing records for date {} while busy processing {}",
+                                        dataRecord.getDate().toLocalDate(), apiEndDate.toLocalDate());
+                                    break;
+                                }
+                            }
+                            // Save the record to a CSV file
+                            Map<Integer, Double> calculatedAverage = getCalculatedAverage(average);
+                            CsvWriter.writeCsvFile(
+                                summaryCsvPath, 
+                                apiEndDate.toLocalDate(),
+                                new ArrayList<>(calculatedAverage.values()),
+                                new ArrayList<>(high.values()),
+                                new ArrayList<>(low.values()));
+                            processedDays++;
+                            // Sleep for 2 seconds to comply with API guidelines (of 1 request per second)
+                            Thread.sleep(Duration.ofSeconds(2));
                         }
-                        apiEndDate = data.get(data.size() - 1).getDate();
-                        Thread.sleep(Duration.ofSeconds(2));
+                        else {
+                            log.info("   Skip {} - Found CSV file : {}",
+                                apiEndDate.toLocalDate(), summaryCsvPath.getParent().getParent().relativize(summaryCsvPath).toString());
+                        }
+                        apiEndDate = apiEndDate.minusDays(1);
                     }
                     while (mostRecentDatabaseDate.isEqual(apiEndDate.toLocalDate())
                         || mostRecentDatabaseDate.isBefore(apiEndDate.toLocalDate()));
@@ -92,7 +136,8 @@ public class WeatherApiScheduler {
                     log.warn("Processing interrupted!", ex);
                 }
                 finally {
-                    log.info("   Read Records : {}", readRecords);
+                    log.info("   Read Records   : {}", readRecords);
+                    log.info("   Processed Days : {}", processedDays);
                 }
             }
         }
@@ -107,5 +152,33 @@ public class WeatherApiScheduler {
         }
     }
 
-}
+    private void processValue(
+            Map<Integer, Double> low,
+            Map<Integer, Double> high,
+            Map<Integer, List<Double>> average,
+            int headerIndex,
+            double value
+    ) {
+        low.merge(headerIndex, value, Math::min);
+        high.merge(headerIndex, value, Math::max);
+        average.computeIfAbsent(headerIndex, k -> new ArrayList<>()).add(value);
+    }
 
+    private Map<Integer, Double> getCalculatedAverage(Map<Integer, List<Double>> average) {
+        Map<Integer, Double> calculatedAverage = average.entrySet().stream().collect(Collectors.toMap(
+            Map.Entry::getKey,
+            e -> {
+                List<Double> vals = e.getValue();
+                if (vals == null || vals.isEmpty()) {
+                    return 0.0;
+                }
+                double avg = vals.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+                return Conversions.roundToOneDecimal(avg);
+            },
+            (a, b) -> a,
+            LinkedHashMap::new
+        ));
+        return calculatedAverage;
+    }
+
+}
