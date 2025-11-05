@@ -46,11 +46,16 @@ public class WeatherCsvScheduler {
     private static final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour
     private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // Every 5 minutes
 
-    private static final Object databaseLock = new Object();
+    private static final Object DATABASE_LOCK = new Object();
 
-    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
 
-    private static final List<String> processedCsvFiles = new ArrayList<>();
+    private static final List<String> PROCESSED_CSV_FILES = new ArrayList<>();
+
+    private static final List<String> KNOWN_BAD_FILES = List.of(
+        "Andante -> ambient-weather-high-lows-details-20241003-20251002.csv",
+        "Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv"
+    );
 
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;
@@ -64,17 +69,17 @@ public class WeatherCsvScheduler {
     }
 
     public boolean isRunning() {
-        return isRunning.get();
+        return IS_RUNNING.get();
     }
 
     public void resetProcessedCsvFiles() {
         repo.deleteAll();
-        processedCsvFiles.clear();
+        PROCESSED_CSV_FILES.clear();
     }
 
     @Async
     public void processCsvFiles() {
-        if (!isRunning.compareAndSet(false, true)) {
+        if (!IS_RUNNING.compareAndSet(false, true)) {
             log.warn("Already busy processing csv files... The new request will be ignored.");
             return;
         }
@@ -92,7 +97,7 @@ public class WeatherCsvScheduler {
             log.info("****************************");
             log.info("Processed all CSV files in : {}", csvRootFolder);
             log.info("****************************");
-            isRunning.set(false);
+            IS_RUNNING.set(false);
         }
     }
 
@@ -100,7 +105,7 @@ public class WeatherCsvScheduler {
         List<Path> csvFiles = paths
             .filter(Files::isRegularFile)
             .filter(path -> path.toString().toLowerCase(Locale.ROOT).endsWith(".csv"))
-            .filter(path -> !processedCsvFiles.contains(getCsvName(path)))
+            .filter(path -> !PROCESSED_CSV_FILES.contains(getCsvName(path)))
             .sorted(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)))
             .toList();
         List<Path> fineScaleCsvFiles = Collections.synchronizedList(new ArrayList<>());
@@ -131,7 +136,7 @@ public class WeatherCsvScheduler {
         var duplicates = 0;
         var warnings = 0;
         var errors = 0;
-        var missing = csvName.startsWith("estimates-") ? 99.99 : 0;
+        var missing = (csvName.contains("estimates-") || csvName.contains("api-")) ? 99.99 : 0;
         try (var reader = Files.newBufferedReader(csvFile)) {
             String[] headers = getHeaders(reader);
             var isSummaryCsv = headers[0].equals("COL0");
@@ -154,7 +159,7 @@ public class WeatherCsvScheduler {
                             var humidity = Double.parseDouble(record.get("Humidity"));
                             var uvRadiationIndex = Double.parseDouble(record.get("Ultra-Violet Radiation Index"));
                             // TODO: Maybe better to build a map in memory and then save the map once-off after all the tasks are done
-                            synchronized (databaseLock) {
+                            synchronized (DATABASE_LOCK) {
                                 var entity = repo.findByDateAndStationAndCategory(date, station, category);
                                 if (entity == null) {
                                     repo.save(
@@ -200,11 +205,20 @@ public class WeatherCsvScheduler {
                         }
                     }
                     catch (NumberFormatException ex) {
-                        log.trace("Could not process record due to number format error.");
-                        log.trace("   CSV File : {}", csvName);
-                        log.trace("   Headers  : {}", Arrays.toString(headers));
-                        log.trace("   Record   : {}", record.toString());
-                        log.trace(ex.getMessage());
+                        if (KNOWN_BAD_FILES.contains(csvName)) {
+                            log.debug("Could not process record due to (known) number format error.");
+                            log.debug("   CSV File : {}", csvName);
+                            log.trace("   Headers  : {}", Arrays.toString(headers));
+                            log.debug("   Record   : {}", record.toString());
+                            log.debug("   Error    : {}", ex.getMessage());
+                        }
+                        else {
+                            log.warn("Could not process record due to number format error.");
+                            log.warn("   CSV File : {}", csvName);
+                            log.trace("   Headers  : {}", Arrays.toString(headers));
+                            log.warn("   Record   : {}", record.toString());
+                            log.warn("   Error    : {}", ex.getMessage());
+                        }
                         log.trace(ex.getMessage(), ex);
                         warnings++;
                     }
@@ -232,7 +246,7 @@ public class WeatherCsvScheduler {
         logBuilder.append(MessageFormatter.format("   Warnings    : {}", warnings).getMessage()).append(System.lineSeparator());
         logBuilder.append(MessageFormatter.format("   Errors      : {}", errors).getMessage()).append(System.lineSeparator());
         log.info(logBuilder.toString());
-        processedCsvFiles.add(csvName);
+        PROCESSED_CSV_FILES.add(csvName);
         return true;
     }
 
@@ -288,7 +302,7 @@ public class WeatherCsvScheduler {
                     logBuilder.append(MessageFormatter.format("   Errors       : {}", errors).getMessage()).append(System.lineSeparator());
                     log.info(logBuilder.toString());
                 }
-                processedCsvFiles.add(csvName);
+                PROCESSED_CSV_FILES.add(csvName);
                 return null;
             });
         }
@@ -389,7 +403,7 @@ public class WeatherCsvScheduler {
         List<CSVRecord> records = CSVFormat.Builder
             .create()
             .setHeader(headers)
-            .setSkipHeaderRecord(true)
+            .setSkipHeaderRecord(false) // getHeaders() will already read teh header and move the reader to the first data line
             .setIgnoreEmptyLines(true)
             .setTrim(true)
             .get()
