@@ -2,12 +2,12 @@ package mywild.wildweather.domain.weather.schedulers.api;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.commons.csv.CSVFormat;
@@ -15,7 +15,11 @@ import org.apache.commons.csv.CSVPrinter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CsvWriter {
+final public class CsvWriter {
+
+    private CsvWriter() {
+        // prevent instantiation
+    }
 
     private static final String[] CSV_HEADERS = {
         "",
@@ -52,7 +56,7 @@ public class CsvWriter {
         log.debug("Writing CSV file: {}", path);
         if (!Files.exists(path)) {
             try (
-                FileWriter writer = new FileWriter(path.toFile());
+                FileWriter writer = new FileWriter(path.toFile(), Charset.defaultCharset());
                 CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(CSV_HEADERS).get())
             ) {
                 printer.printRecord(Stream.of(

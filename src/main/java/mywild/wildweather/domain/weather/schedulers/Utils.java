@@ -2,9 +2,13 @@ package mywild.wildweather.domain.weather.schedulers;
 
 import java.nio.file.Path;
 
-public interface Utils {
+final public class Utils {
 
-    static String getStationName(Path path) {
+    private Utils() {
+        // prevent instantiation
+    }
+
+    public static String getStationName(Path path) {
         var stationPath = path.getParent();
         if (stationPath == null) {
             return "UNKNOWN";

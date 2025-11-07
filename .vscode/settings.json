@@ -10,6 +10,7 @@
         "gson",
         "gsonfire",
         "HenryDeLange",
+        "jacoco",
         "jdbc",
         "liberica",
         "logback",

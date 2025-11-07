@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
-  <!-- <Match>
-    <Package name="~mywild\.wildweather\.openapi(\..*)?" />
-  </Match> -->
+  <Match>
+    <Package name="~mywild\.ambientweather\.openapi(\..*)?" />
+  </Match>
   <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
     <Class name="mywild.wildweather.framework.swagger.OpenApiYamlWriter" />
@@ -10,7 +10,25 @@
   </Match>
   <Match>
     <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
-    <Class name="mywild.wildweather.domain.weather.logic.WeatherCsvScheduler" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.csv.ProcessSummaryFiles" />
     <Method name="processSummaryFile" />
+  </Match>
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.csv.ProcessSummaryFiles" />
+  </Match>
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler" />
+    <Method name="processApiData" />
+  </Match>
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler" />
+    <Method name="processApiData" />
+  </Match>
+  <Match>
+    <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    <Class name="mywild.wildweather.base.user.logic.UserMapperImpl" />
   </Match>
 </FindBugsFilter>

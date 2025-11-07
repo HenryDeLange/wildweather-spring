@@ -1,6 +1,10 @@
 package mywild.wildweather.domain.weather.schedulers.api;
 
-public interface Conversions {
+final class Conversions {
+
+    private Conversions() {
+        // prevent instantiation
+    }
 
     static final String[] DIRECTIONS = {
         "N", "NNE", "NE", "ENE",
