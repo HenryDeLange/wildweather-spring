@@ -11,7 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.weather.schedulers.Utils;
 
 @Slf4j
-public class CsvUtils {
+final public class CsvUtils {
+
+    private CsvUtils() {
+        // prevent instantiation
+    }
 
     static String getCsvName(Path path) {
         return Utils.getStationName(path) + " -> " + path.getFileName();

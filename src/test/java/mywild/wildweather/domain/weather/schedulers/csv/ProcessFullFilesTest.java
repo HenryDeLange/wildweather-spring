@@ -41,12 +41,12 @@ public class ProcessFullFilesTest {
         f.setAccessible(true);
         f.set(proc, mockRepo);
 
-        WeatherCsvScheduler.PROCESSED_CSV_FILES.clear();
+        WeatherCsvScheduler.clearProcessedFiles();
 
         proc.processAllFineScaleFiles(List.of(csv));
 
         String csvName = CsvUtils.getCsvName(csv);
-        assertTrue(WeatherCsvScheduler.PROCESSED_CSV_FILES.contains(csvName));
+        assertTrue(WeatherCsvScheduler.hasFileBeenProcessed(csvName));
 
         verify(mockRepo).saveAll(org.mockito.ArgumentMatchers.anyList());
     }

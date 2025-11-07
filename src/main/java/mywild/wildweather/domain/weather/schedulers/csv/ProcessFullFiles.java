@@ -87,7 +87,7 @@ public class ProcessFullFiles {
                     logBuilder.append(MessageFormatter.format("   Errors       : {}", errors).getMessage()).append(System.lineSeparator());
                     log.info(logBuilder.toString());
                 }
-                WeatherCsvScheduler.PROCESSED_CSV_FILES.add(csvName);
+                WeatherCsvScheduler.markFileAsProcessed(csvName);
                 return null;
             });
         }

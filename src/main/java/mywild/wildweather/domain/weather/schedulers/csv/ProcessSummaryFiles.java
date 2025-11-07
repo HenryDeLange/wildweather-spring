@@ -44,7 +44,7 @@ public class ProcessSummaryFiles {
         List<Path> csvFiles = paths
             .filter(Files::isRegularFile)
             .filter(path -> path.toString().toLowerCase(Locale.ROOT).endsWith(".csv"))
-            .filter(path -> !WeatherCsvScheduler.PROCESSED_CSV_FILES.contains(CsvUtils.getCsvName(path)))
+            .filter(path -> !WeatherCsvScheduler.hasFileBeenProcessed(CsvUtils.getCsvName(path)))
             .sorted(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)))
             .toList();
         List<Path> fineScaleCsvFiles = Collections.synchronizedList(new ArrayList<>());
@@ -185,7 +185,7 @@ public class ProcessSummaryFiles {
         logBuilder.append(MessageFormatter.format("   Warnings    : {}", warnings).getMessage()).append(System.lineSeparator());
         logBuilder.append(MessageFormatter.format("   Errors      : {}", errors).getMessage()).append(System.lineSeparator());
         log.info(logBuilder.toString());
-        WeatherCsvScheduler.PROCESSED_CSV_FILES.add(csvName);
+        WeatherCsvScheduler.markFileAsProcessed(csvName);
         return true;
     }
 

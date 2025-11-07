@@ -14,14 +14,18 @@ import mywild.wildweather.domain.weather.web.dto.WeatherDataDto;
 import mywild.wildweather.domain.weather.web.dto.WeatherField;
 import mywild.wildweather.domain.weather.web.dto.WeatherGrouping;
 
-public class Mapper {
+final public class Mapper {
+
+    private Mapper() {
+        // prevent instantiation
+    }
 
     static WeatherDataDto mapEntitiesToDto(
             WeatherGrouping grouping,
             WeatherAggregate aggregate,
             Set<WeatherField> weatherFields,
             List<WeatherEntity> entities) {
-        var calcAverage = (aggregate == null || aggregate == WeatherAggregate.AVERAGE);
+        var calcAverage = aggregate == null || aggregate == WeatherAggregate.AVERAGE;
         Map<String, Integer> daysPerGroup = new HashMap<>();
         Map<String, Integer> daysWithDataPerGroup = new HashMap<>();
         var weatherData = new WeatherDataDto();

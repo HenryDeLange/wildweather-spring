@@ -7,7 +7,11 @@ import java.util.function.Function;
 import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
 import mywild.wildweather.domain.weather.web.dto.WeatherField;
 
-public abstract class WeatherFieldExtractor {
+final public class WeatherFieldExtractor {
+
+    private WeatherFieldExtractor() {
+        // prevent instantiation
+    }
 
     static final Map<WeatherField, Function<WeatherEntity, Double>> EXTRACTORS;
     static {

@@ -63,7 +63,7 @@ See [licenses.xml](target/generated-resources/licenses.xml) for license details.
 
 #### Code Report
 
-A code report for `SpotBugs`, `PMD` and `CPD` can be generated using the below commands:\
+A code report for `SpotBugs`, `PMD`, `CPD` and `Jacoco` can be generated using the below commands:\
 `./mvnw clean verify -P report`\
 `./mvnw site -P report`
 

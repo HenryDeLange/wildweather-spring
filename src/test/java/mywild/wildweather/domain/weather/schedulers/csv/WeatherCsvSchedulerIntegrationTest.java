@@ -20,7 +20,7 @@ public class WeatherCsvSchedulerIntegrationTest {
         isRunningField.setAccessible(true);
         AtomicBoolean isRunning = (AtomicBoolean) isRunningField.get(null);
         isRunning.set(false);
-        WeatherCsvScheduler.PROCESSED_CSV_FILES.clear();
+        WeatherCsvScheduler.clearProcessedFiles();
     }
 
     @Test

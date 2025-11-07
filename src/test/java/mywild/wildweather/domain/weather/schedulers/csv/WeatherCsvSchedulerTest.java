@@ -24,7 +24,7 @@ public class WeatherCsvSchedulerTest {
         isRunningField.setAccessible(true);
         AtomicBoolean isRunning = (AtomicBoolean) isRunningField.get(null);
         isRunning.set(false);
-        WeatherCsvScheduler.PROCESSED_CSV_FILES.clear();
+        WeatherCsvScheduler.clearProcessedFiles();
     }
 
     @Test
@@ -89,6 +89,51 @@ public class WeatherCsvSchedulerTest {
 
         isRunning.set(false);
         assertTrue(!scheduler.isRunning());
+    }
+    
+    @Test
+    void clearProcessedFiles_shouldEmptyTheList() {
+        WeatherCsvScheduler.markFileAsProcessed("test1.csv");
+        WeatherCsvScheduler.markFileAsProcessed("test2.csv");
+        
+        WeatherCsvScheduler.clearProcessedFiles();
+        
+        assertFalse(WeatherCsvScheduler.hasFileBeenProcessed("test1.csv"));
+        assertFalse(WeatherCsvScheduler.hasFileBeenProcessed("test2.csv"));
+    }
+
+    @Test
+    void hasFileBeenProcessed_shouldReturnTrueForProcessedFiles() {
+        WeatherCsvScheduler.markFileAsProcessed("test.csv");
+        
+        assertTrue(WeatherCsvScheduler.hasFileBeenProcessed("test.csv"));
+        assertFalse(WeatherCsvScheduler.hasFileBeenProcessed("other.csv"));
+    }
+
+    @Test 
+    void markFileAsProcessed_shouldAddFileToProcessedList() {
+        String testFile = "newfile.csv";
+        assertFalse(WeatherCsvScheduler.hasFileBeenProcessed(testFile));
+        
+        WeatherCsvScheduler.markFileAsProcessed(testFile);
+        
+        assertTrue(WeatherCsvScheduler.hasFileBeenProcessed(testFile));
+    }
+
+    @Test
+    void resetProcessedCsvFiles_shouldClearListAndRepository() throws Exception {
+        WeatherCsvScheduler scheduler = new WeatherCsvScheduler();
+        WeatherRepository mockRepo = Mockito.mock(WeatherRepository.class);
+        
+        Field fRepo = WeatherCsvScheduler.class.getDeclaredField("repo");
+        fRepo.setAccessible(true);
+        fRepo.set(scheduler, mockRepo);
+
+        WeatherCsvScheduler.markFileAsProcessed("test.csv");
+        scheduler.resetProcessedCsvFiles();
+
+        verify(mockRepo).deleteAll();
+        assertFalse(WeatherCsvScheduler.hasFileBeenProcessed("test.csv"));
     }
 
 }

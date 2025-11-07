@@ -25,7 +25,7 @@ public class WeatherCsvScheduler {
 
     private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
 
-    protected static final List<String> PROCESSED_CSV_FILES = new ArrayList<>();
+    private static final List<String> PROCESSED_CSV_FILES = new ArrayList<>();
 
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;
@@ -75,6 +75,18 @@ public class WeatherCsvScheduler {
             log.info("****************************");
             IS_RUNNING.set(false);
         }
+    }
+
+    static void clearProcessedFiles() {
+        PROCESSED_CSV_FILES.clear();
+    }
+
+    static boolean hasFileBeenProcessed(String fileName) {
+        return PROCESSED_CSV_FILES.contains(fileName);
+    }
+
+    static void markFileAsProcessed(String fileName) {
+        PROCESSED_CSV_FILES.add(fileName);
     }
 
 }

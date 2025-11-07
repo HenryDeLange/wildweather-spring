@@ -84,7 +84,7 @@ public class WeatherApiScheduler {
                     OffsetDateTime apiEndDate = LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC).minusSeconds(1); // Yesterday midnight
                     do {
                         var summaryCsvPath = CsvWriter.getCsvPath(macAddressPath.getParent(), apiEndDate.toLocalDateTime());
-                        if (!Files.exists(summaryCsvPath)) {
+                        if (summaryCsvPath != null && !Files.exists(summaryCsvPath)) {
                             // Fetch the API data
                             log.info("   Fetching data for : {}", apiEndDate.toLocalDate());
                             var data = api.getDeviceData(stationMacAddress, apiEndDate, EXPECTED_RECORDS_PER_DAY);
@@ -125,7 +125,8 @@ public class WeatherApiScheduler {
                         }
                         else {
                             log.info("   Skip {} - Found CSV file : {}",
-                                apiEndDate.toLocalDate(), summaryCsvPath.getParent().getParent().relativize(summaryCsvPath).toString());
+                                apiEndDate.toLocalDate(), 
+                                summaryCsvPath.getParent().getParent().relativize(summaryCsvPath).toString());
                         }
                         apiEndDate = apiEndDate.minusDays(1);
                     }

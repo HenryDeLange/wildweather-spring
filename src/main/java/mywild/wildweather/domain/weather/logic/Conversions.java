@@ -1,7 +1,11 @@
 package mywild.wildweather.domain.weather.logic;
 
-public interface Conversions {
+final class Conversions {
 
+    private Conversions() {
+        // prevent instantiation
+    }
+    
     static double roundToOneDecimal(double value) {
         return Math.round(value * 10.0) / 10.0;
     }

@@ -37,7 +37,7 @@ public class ProcessSummaryFilesTest {
         f.setAccessible(true);
         f.set(proc, mockRepo);
 
-        WeatherCsvScheduler.PROCESSED_CSV_FILES.clear();
+        WeatherCsvScheduler.clearProcessedFiles();
 
         List<Path> fine = proc.processAllSummaryFiles(Stream.of(csv));
 
