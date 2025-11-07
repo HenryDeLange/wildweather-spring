@@ -38,7 +38,7 @@ public class WeatherApiScheduler {
     private static final int SCHEDULE_RATE = 1 * 60 * 60 * 1000; // 1 hours
     private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // 288 (Every 5 minutes)
 
-    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
 
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;
@@ -55,12 +55,12 @@ public class WeatherApiScheduler {
     }
 
     public boolean isRunning() {
-        return isRunning.get();
+        return IS_RUNNING.get();
     }
 
     @Async
     public void processApiData() {
-        if (!isRunning.compareAndSet(false, true)) {
+        if (!IS_RUNNING.compareAndSet(false, true)) {
             log.warn("Already busy processing api data... The new request will be ignored.");
             return;
         }
@@ -148,7 +148,7 @@ public class WeatherApiScheduler {
             log.info("****************************");
             log.info("Processed all API data");
             log.info("****************************");
-            isRunning.set(false);
+            IS_RUNNING.set(false);
         }
     }
 
