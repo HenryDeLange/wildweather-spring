@@ -141,12 +141,33 @@ paths:
       responses:
         "200":
           description: OK
-  /api/v1/admin/process/api:
+  /api/v1/admin/process/api/weather-underground:
+    get:
+      tags:
+      - Admin
+      summary: Status of processing the Weather Underground API data.
+      operationId: getWeatherUndergroundApiProcessStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiStatus"
+    post:
+      tags:
+      - Admin
+      summary: Manually trigger the processing of Weather Underground API data.
+      operationId: triggerWeatherUndergroundApiProcessing
+      responses:
+        "200":
+          description: OK
+  /api/v1/admin/process/api/ambient-weather:
     get:
       tags:
       - Admin
       summary: Status of processing the Ambient Weather API data.
-      operationId: getApiProcessStatus
+      operationId: getAmbientWeatherApiProcessStatus
       responses:
         "200":
           description: OK
@@ -158,7 +179,7 @@ paths:
       tags:
       - Admin
       summary: Manually trigger the processing of Ambient Weather API data.
-      operationId: triggerApiProcessing
+      operationId: triggerAmbientWeatherApiProcessing
       responses:
         "200":
           description: OK

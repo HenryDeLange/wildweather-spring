@@ -19,12 +19,12 @@
   </Match>
   <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler" />
     <Method name="processApiData" />
   </Match>
   <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler" />
     <Method name="processApiData" />
   </Match>
   <Match>

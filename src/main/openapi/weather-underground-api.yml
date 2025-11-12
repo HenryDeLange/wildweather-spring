@@ -1,0 +1,307 @@
+openapi: 3.1.0
+info:
+  title: Weather Underground REST API
+  version: 1.0.0
+  description: >
+    OpenAPI spec for Weather Underground (The Weather Company)'s Data REST API. Authentication requires an `apiKey` query parameters. Must use `Accept-Encoding: gzip`.
+  contact:
+    name: Documentation
+    url: https://docs.google.com/document/d/1eKCnKXI9xnoMGRRzOL1xPCBihNV2rOet08qpE_gArAY
+
+servers:
+  - url: https://api.weather.com/v2
+
+tags:
+- name: Weather Underground
+  description: Historic weather data.
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: query
+      name: apiKey
+
+  parameters:
+    stationId:
+      name: stationId
+      in: query
+      required: true
+      schema:
+        type: string
+      description: Valid PWS Station ID (e.g., ICANON4)
+
+    date:
+      name: date
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: '^\d{8}$'
+      description: Specific date in YYYYMMDD format
+
+    startDate:
+      name: startDate
+      in: query
+      required: false
+      schema:
+        type: string
+        pattern: '^\d{8}$'
+      description: Start date for range queries (YYYYMMDD)
+
+    endDate:
+      name: endDate
+      in: query
+      required: false
+      schema:
+        type: string
+        pattern: '^\d{8}$'
+      description: End date for range queries (YYYYMMDD)
+
+    format:
+      name: format
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/FormatEnum'
+      description: Response format
+
+    units:
+      name: units
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/UnitsEnum'
+      description: "Unit system: 'e' for Imperial, 'm' for Metric"
+
+    numericPrecision:
+      name: numericPrecision
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/NumericPrecisionEnum'
+      description: Optional. Use 'decimal' to return decimal values.
+
+  schemas:
+    FormatEnum:
+      type: string
+      enum: [json, xml]
+      x-enum-varnames: [JSON, XML]
+
+    UnitsEnum:
+      type: string
+      enum: [e, m]
+      x-enum-varnames: [IMPERIAL, METRIC]
+
+    NumericPrecisionEnum:
+      type: string
+      enum: [decimal]
+      x-enum-varnames: [DECIMAL]
+
+    PWSResponseWrapper:
+      type: object
+      properties:
+        observations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PWSResponse'
+
+    PWSResponse:
+      type: object
+      required:
+        - stationID
+        - qcStatus
+      properties:
+        stationID:
+          type: string
+        tz:
+          type: string
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        obsTimeUtc:
+          type: string
+          format: date-time
+        obsTimeLocal:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'
+          description: Local observation time in format "YYYY-MM-DD HH:mm:ss"
+        epoch:
+          type: integer
+        qcStatus:
+          type: integer
+          enum: [-1, 0, 1]
+        # Data
+        solarRadiationHigh:
+          type: number
+          format: double
+        uvHigh:
+          type: number
+          format: double
+        winddirAvg:
+          type: number
+          format: double
+        humidityAvg:
+          type: number
+          format: double
+        humidityHigh:
+          type: number
+          format: double
+        humidityLow:
+          type: number
+          format: double
+        imperial:
+          $ref: '#/components/schemas/UnitData'
+        metric:
+          $ref: '#/components/schemas/UnitData'
+
+    UnitData:
+      type: object
+      required: []
+      properties:
+        tempAvg:
+          type: number
+          format: double
+        tempHigh:
+          type: number
+          format: double
+        tempLow:
+          type: number
+          format: double
+        dewptAvg:
+          type: number
+          format: double
+        dewptHigh:
+          type: number
+          format: double
+        dewptLow:
+          type: number
+          format: double
+        windspeedAvg:
+          type: number
+          format: double
+        windspeedHigh:
+          type: number
+          format: double
+        windspeedLow:
+          type: number
+          format: double
+        windgustAvg:
+          type: number
+          format: double
+        windgustHigh:
+          type: number
+          format: double
+        windgustLow:
+          type: number
+          format: double
+        windchillAvg:
+          type: number
+          format: double
+        windchillHigh:
+          type: number
+          format: double
+        windchillLow:
+          type: number
+          format: double
+        heatindexAvg:
+          type: number
+          format: double
+        heatindexHigh:
+          type: number
+          format: double
+        heatindexLow:
+          type: number
+          format: double
+        pressureMax:
+          type: number
+          format: double
+        pressureMin:
+          type: number
+          format: double
+        pressureTrend:
+          type: number
+          format: double
+        precipRate:
+          type: number
+          format: double
+        precipTotal:
+          type: number
+          format: double
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /pws/history/hourly:
+    get:
+      tags:
+        - Weather Underground
+      summary: Get hourly historical data from a PWS
+      operationId: getHourly
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/stationId'
+        - $ref: '#/components/parameters/date'
+        - $ref: '#/components/parameters/startDate'
+        - $ref: '#/components/parameters/endDate'
+        - $ref: '#/components/parameters/format'
+        - $ref: '#/components/parameters/units'
+        - $ref: '#/components/parameters/numericPrecision'
+      responses:
+        '200':
+          description: Successful response with hourly data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PWSResponseWrapper'
+
+  /pws/history/daily:
+    get:
+      tags:
+        - Weather Underground
+      summary: Get daily summary historical data from a PWS
+      operationId: getDaily
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/stationId'
+        - $ref: '#/components/parameters/date'
+        - $ref: '#/components/parameters/startDate'
+        - $ref: '#/components/parameters/endDate'
+        - $ref: '#/components/parameters/format'
+        - $ref: '#/components/parameters/units'
+        - $ref: '#/components/parameters/numericPrecision'
+      responses:
+        '200':
+          description: Successful response with daily summary data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PWSResponseWrapper'
+
+  /pws/history/all:
+    get:
+      tags:
+        - Weather Underground
+      summary: Get all available historical data from a PWS for a single date
+      operationId: getAll
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/stationId'
+        - $ref: '#/components/parameters/date'
+        - $ref: '#/components/parameters/format'
+        - $ref: '#/components/parameters/units'
+        - $ref: '#/components/parameters/numericPrecision'
+      responses:
+        '200':
+          description: Successful response with all data for the date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PWSResponseWrapper'

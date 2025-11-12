@@ -7,7 +7,8 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.admin.web.dto.ApiStatus;
 import mywild.wildweather.domain.admin.web.dto.CsvStatus;
-import mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler;
 import mywild.wildweather.domain.weather.schedulers.csv.WeatherCsvScheduler;
 
 @Slf4j
@@ -19,7 +20,10 @@ public class AdminService {
     private WeatherCsvScheduler csvScheduler;
 
     @Autowired
-    private WeatherApiScheduler apiScheduler;
+    private AmbientWeatherApiScheduler ambientWeatherApiScheduler;
+
+    @Autowired
+    private WeatherUndergroundApiScheduler weatherUndergroundApiScheduler;
 
     public void triggerCsvProcessing(boolean forceFullReload) {
         if (forceFullReload) {
@@ -32,12 +36,20 @@ public class AdminService {
         return new CsvStatus(csvScheduler.isRunning());
     }
 
-    public void triggerApiProcessing() {
-        apiScheduler.processApiData();
+    public void triggerAmbientWeatherApiProcessing() {
+        ambientWeatherApiScheduler.processApiData();
     }
 
-    public @Valid ApiStatus getApiProcessStatus() {
-        return new ApiStatus(apiScheduler.isRunning());
+    public @Valid ApiStatus getAmbientWeatherApiProcessStatus() {
+        return new ApiStatus(ambientWeatherApiScheduler.isRunning());
+    }
+
+    public void triggerWeatherUndergroundApiProcessing() {
+        weatherUndergroundApiScheduler.processApiData();
+    }
+
+    public @Valid ApiStatus getWeatherUndergroundApiProcessStatus() {
+        return new ApiStatus(weatherUndergroundApiScheduler.isRunning());
     }
 
 }

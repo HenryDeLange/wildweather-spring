@@ -19,7 +19,7 @@ public class AmbientWeatherApiConfig {
     private String apiKey;
 
     @Bean
-    ApiClient apiClient() {
+    ApiClient ambientWeatherApiClient() {
         ApiClient apiClient = mywild.ambientweather.openapi.client.Configuration.getDefaultApiClient();
         ApiKeyAuth appKeyAuth = (ApiKeyAuth) apiClient.getAuthentication("AppKeyAuth");
         appKeyAuth.setApiKey(appKey);
@@ -29,8 +29,8 @@ public class AmbientWeatherApiConfig {
     }
 
     @Bean
-    AmbientWeatherApi ambientWeatherApi(ApiClient apiClient) {
-        return new AmbientWeatherApi(apiClient);
+    AmbientWeatherApi ambientWeatherApi(ApiClient ambientWeatherApiClient) {
+        return new AmbientWeatherApi(ambientWeatherApiClient);
     }
 
 }

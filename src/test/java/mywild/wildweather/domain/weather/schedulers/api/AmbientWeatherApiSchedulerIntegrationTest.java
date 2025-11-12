@@ -20,7 +20,7 @@ import mywild.ambientweather.openapi.client.api.AmbientWeatherApi;
 import mywild.ambientweather.openapi.client.model.DeviceData;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 
-public class WeatherApiSchedulerIntegrationTest {
+public class AmbientWeatherApiSchedulerIntegrationTest {
 
     @Test
     void testProcessApiDataWritesCsv() throws Exception {
@@ -32,9 +32,9 @@ public class WeatherApiSchedulerIntegrationTest {
         String macAddress = "AA:BB:CC:DD";
         Files.writeString(macFile, macAddress);
 
-        WeatherApiScheduler scheduler = new WeatherApiScheduler();
+        AmbientWeatherApiScheduler scheduler = new AmbientWeatherApiScheduler();
 
-        var csvField = WeatherApiScheduler.class.getDeclaredField("csvRootFolder");
+        var csvField = AmbientWeatherApiScheduler.class.getDeclaredField("csvRootFolder");
         csvField.setAccessible(true);
         csvField.set(scheduler, tempDir.toString());
 
@@ -59,15 +59,15 @@ public class WeatherApiSchedulerIntegrationTest {
 
         when(api.getDeviceData(eq(macAddress), any(OffsetDateTime.class), anyInt())).thenReturn(List.of(rec));
 
-        var apiField = WeatherApiScheduler.class.getDeclaredField("api");
+        var apiField = AmbientWeatherApiScheduler.class.getDeclaredField("api");
         apiField.setAccessible(true);
         apiField.set(scheduler, api);
 
-        var repoField = WeatherApiScheduler.class.getDeclaredField("repo");
+        var repoField = AmbientWeatherApiScheduler.class.getDeclaredField("repo");
         repoField.setAccessible(true);
         repoField.set(scheduler, repo);
 
-        var isRunningField = WeatherApiScheduler.class.getDeclaredField("IS_RUNNING");
+        var isRunningField = AmbientWeatherApiScheduler.class.getDeclaredField("IS_RUNNING");
         isRunningField.setAccessible(true);
         AtomicBoolean flag = (AtomicBoolean) isRunningField.get(null);
         flag.set(false);

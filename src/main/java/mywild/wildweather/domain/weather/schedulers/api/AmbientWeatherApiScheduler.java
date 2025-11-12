@@ -26,13 +26,14 @@ import mywild.wildweather.domain.weather.data.WeatherRepository;
 import mywild.wildweather.domain.weather.schedulers.Utils;
 
 /**
+ * https://ambientweather.net/account/keys
  * https://ambientweather.docs.apiary.io/
  * https://github.com/ambient-weather/api-docs/wiki/Device-Data-Specs
  */
 
 @Slf4j
 @Service
-public class WeatherApiScheduler {
+public class AmbientWeatherApiScheduler {
 
     private static final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
     private static final int SCHEDULE_RATE = 1 * 60 * 60 * 1000; // 1 hours
@@ -61,13 +62,13 @@ public class WeatherApiScheduler {
     @Async
     public void processApiData() {
         if (!IS_RUNNING.compareAndSet(false, true)) {
-            log.warn("Already busy processing api data... The new request will be ignored.");
+            log.warn("Already busy processing Ambient Weather API data... The new request will be ignored.");
             return;
         }
         try (Stream<Path> paths = Files.walk(Paths.get(csvRootFolder))) {
-            log.info("*************************");
-            log.info("Fetching API data");
-            log.info("*************************");
+            log.info("****************************************");
+            log.info("Fetching Ambient Weather API data");
+            log.info("****************************************");
             List<Path> macAddressFiles = paths
                 .filter(Files::isRegularFile)
                 .filter(path -> path.toString().endsWith("macAddress.txt"))
@@ -80,7 +81,7 @@ public class WeatherApiScheduler {
                 try (var reader = Files.newBufferedReader(macAddressPath)) {
                     var stationMacAddress = reader.readLine();
                     log.info("----------------");
-                    log.info("Processing API : {}", station);
+                    log.info("Processing Ambient Weather API : {}", station);
                     OffsetDateTime apiEndDate = LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC).minusSeconds(1); // Yesterday midnight
                     do {
                         var summaryCsvPath = CsvWriter.getCsvPath(macAddressPath.getParent(), apiEndDate.toLocalDateTime());
@@ -146,9 +147,9 @@ public class WeatherApiScheduler {
             log.error(ex.getMessage(), ex);
         }
         finally {
-            log.info("****************************");
-            log.info("Processed all API data");
-            log.info("****************************");
+            log.info("****************************************");
+            log.info("Processed all Ambient Weather API data");
+            log.info("****************************************");
             IS_RUNNING.set(false);
         }
     }

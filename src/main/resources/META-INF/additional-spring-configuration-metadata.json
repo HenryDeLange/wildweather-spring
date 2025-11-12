@@ -88,5 +88,10 @@
     "name": "mywild.ambient-weather.api-key",
     "type": "java.lang.String",
     "description": "The Ambient Weather API Key."
+  },
+  {
+    "name": "mywild.weather-underground.api-key",
+    "type": "java.lang.String",
+    "description": "The Weather Underground API Key."
   }
 ]}

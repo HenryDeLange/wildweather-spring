@@ -1,10 +1,12 @@
 openapi: 3.1.0
 info:
   title: Ambient Weather REST API
-  version: "1.0.0"
+  version: 1.0.0
   description: >
     OpenAPI spec for Ambient Weather's REST API. Authentication requires both `applicationKey` and `apiKey` query parameters. Limit to 1 request per second.
-    [https://ambientweather.docs.apiary.io](https://ambientweather.docs.apiary.io)
+  contact:
+    name: Documentation
+    url: https://ambientweather.docs.apiary.io
 
 servers:
   - url: https://api.ambientweather.net/v1
@@ -191,7 +193,7 @@ paths:
   /devices:
     get:
       tags:
-      - Ambient Weather
+        - Ambient Weather
       summary: List devices information
       operationId: getDevices
       description: Returns all devices associated with the given API key.
