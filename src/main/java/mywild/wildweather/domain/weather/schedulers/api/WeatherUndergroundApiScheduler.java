@@ -45,7 +45,7 @@ public class WeatherUndergroundApiScheduler {
 
     private static final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
     private static final int SCHEDULE_RATE = 1 * 60 * 60 * 1000; // 1 hours
-    private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // 288 (Every 5 minutes)
+    private static final int STOP_AT_EMPTY_DAYS = 5;
 
     private static final DateTimeFormatter DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -76,18 +76,18 @@ public class WeatherUndergroundApiScheduler {
             return;
         }
         try (Stream<Path> paths = Files.walk(Paths.get(csvRootFolder))) {
-            log.info("*************************");
+            log.info("********************************************");
             log.info("Fetching Weather Underground API data");
-            log.info("*************************");
+            log.info("********************************************");
             List<Path> stationIdFiles = paths
                 .filter(Files::isRegularFile)
                 .filter(path -> path.toString().endsWith("WeatherUnderground-StationId.txt"))
                 .toList();
             for (var stationIdPath : stationIdFiles) {
                 var station = Utils.getStationName(stationIdPath);
-                LocalDate mostRecentDatabaseDate = repo.findTopDateByStation(station);
                 var readRecords = 0;
                 var processedDays = 0;
+                var consecutiveEmptyDays = 0;
                 try (var reader = Files.newBufferedReader(stationIdPath)) {
                     var stationId = reader.readLine();
                     if (stationId.equalsIgnoreCase("SKIP")) {
@@ -95,60 +95,86 @@ public class WeatherUndergroundApiScheduler {
                         continue;
                     }
                     log.info("----------------");
-                    log.info("Processing Weather Underground API : {}", station);
+                    log.info("Processing Weather Underground API : {} -> {}", stationId, station);
                     LocalDate apiDate = LocalDate.now().minusDays(1); // Yesterday midnight
                     do {
                         var summaryCsvPath = CsvWriter.getCsvPath(stationIdPath.getParent(), LocalDateTime.of(apiDate, LocalTime.MIDNIGHT));
                         if (summaryCsvPath != null && !Files.exists(summaryCsvPath)) {
                             // Fetch the API data
                             log.info("   Fetching data for : {}", apiDate);
-                            var data = api.getDaily(stationId, apiDate.format(DATE_FORMAT), 
+// TODO: rather fetch a month at a time
+                            var httpData = api.getDailyWithHttpInfo(stationId, apiDate.format(DATE_FORMAT), 
                                 FormatEnum.JSON, UnitsEnum.METRIC, null, null, NumericPrecisionEnum.DECIMAL);
-                            // Calculate the daily low/ave/high values
-                            Map<Integer, Double> low = new LinkedHashMap<>();
-                            Map<Integer, Double> high = new LinkedHashMap<>();
-                            Map<Integer, List<Double>> average = new LinkedHashMap<>();
-                            System.out.println(data);
-                            // for (var dataRecord : data) {
-                            //     if (dataRecord.getDate().toLocalDate().equals(apiEndDate.toLocalDate())) {
-                            //         processValue(low, high, average, 0, Conversions.fahToCel(dataRecord.getTempf()));
-                            //         processValue(low, high, average, 1, Conversions.mphToKmh(dataRecord.getWindspeedmph()));
-                            //         processValue(low, high, average, 2, Conversions.mphToKmh(dataRecord.getWindgustmph()));
-                            //         processValue(low, high, average, 3, dataRecord.getWinddir());
-                            //         processValue(low, high, average, 4, Conversions.inToMm(dataRecord.getHourlyrainin()));
-                            //         processValue(low, high, average, 5, Conversions.inToMm(dataRecord.getDailyrainin()));
-                            //         processValue(low, high, average, 6, Conversions.inHgToHpa(dataRecord.getBaromrelin()));
-                            //         processValue(low, high, average, 7, dataRecord.getHumidity());
-                            //         processValue(low, high, average, 8, dataRecord.getUv());
-                            //         readRecords++;
-                            //     }
-                            //     else {
-                            //         log.debug("   Not processing records for date {} while busy processing {}",
-                            //             dataRecord.getDate().toLocalDate(), apiEndDate.toLocalDate());
-                            //         break;
-                            //     }
-                            // }
-                            // Save the record to a CSV file
-                            Map<Integer, Double> calculatedAverage = getCalculatedAverage(average);
-                            CsvWriter.writeCsvFile(
-                                summaryCsvPath, 
-                                apiDate,
-                                new ArrayList<>(calculatedAverage.values()),
-                                new ArrayList<>(high.values()),
-                                new ArrayList<>(low.values()));
+                            var data = httpData.getData();
+                            if (data != null && data.getObservations() != null && !data.getObservations().isEmpty()) {
+                                // Calculate the daily low/ave/high values
+                                List<Double> low = new ArrayList<>();
+                                List<Double> high = new ArrayList<>();
+                                List<Double> average = new ArrayList<>();
+                                for (var dataRecord : data.getObservations()) {
+                                    low     .add(dataRecord.getMetric().getTempLow());
+                                    average .add(dataRecord.getMetric().getTempAvg());
+                                    high    .add(dataRecord.getMetric().getTempHigh());
+                                    low     .add(dataRecord.getMetric().getWindspeedLow());
+                                    average .add(dataRecord.getMetric().getWindspeedAvg());
+                                    high    .add(dataRecord.getMetric().getWindspeedHigh());
+                                    low     .add(dataRecord.getMetric().getWindgustLow());
+                                    average .add(dataRecord.getMetric().getWindgustAvg());
+                                    high    .add(dataRecord.getMetric().getWindgustHigh());
+                                    low     .add(dataRecord.getWinddirAvg());
+                                    average .add(dataRecord.getWinddirAvg());
+                                    high    .add(dataRecord.getWinddirAvg());
+                                    low     .add(dataRecord.getMetric().getPrecipRate());
+                                    average .add(dataRecord.getMetric().getPrecipRate());
+                                    high    .add(dataRecord.getMetric().getPrecipRate());
+                                    low     .add(dataRecord.getMetric().getPrecipTotal());
+                                    average .add(dataRecord.getMetric().getPrecipTotal());
+                                    high    .add(dataRecord.getMetric().getPrecipTotal());
+                                    low     .add(dataRecord.getMetric().getPressureMin());
+                                    average .add(dataRecord.getMetric().getPressureTrend());
+                                    high    .add(dataRecord.getMetric().getPressureMax());
+                                    low     .add(dataRecord.getHumidityLow());
+                                    average .add(dataRecord.getHumidityAvg());
+                                    high    .add(dataRecord.getHumidityHigh());
+                                    low     .add(0.0);
+                                    average .add(dataRecord.getUvHigh() != null ? dataRecord.getUvHigh() / 2.0 : null);
+                                    high    .add(dataRecord.getUvHigh());
+                                    readRecords++;
+                                }
+                                // Save the record to a CSV file
+                                if (readRecords >= 1) {
+                                    CsvWriter.writeCsvFile(
+                                        summaryCsvPath, 
+                                        apiDate,
+                                        new ArrayList<>(average),
+                                        new ArrayList<>(high),
+                                        new ArrayList<>(low));
+                                }
+                                consecutiveEmptyDays = 0;
+                            }
+                            else {
+                                log.info("   No data returned : {} - {}", httpData.getStatusCode(), 
+                                    httpData.getData() == null ? "Response was null" 
+                                        : httpData.getData().getObservations() == null ? "Observations was null"
+                                            : "Observations was empty");
+                                consecutiveEmptyDays++;
+                            }
                             processedDays++;
-                            // Sleep for 2 seconds to comply with API guidelines (of 1 request per second)
-                            Thread.sleep(Duration.ofSeconds(2));
+                            // Sleep for 1 seconds to not spam the api too much
+                            Thread.sleep(Duration.ofSeconds(1));
                         }
                         else {
-                            log.info("   Skip {} - Found CSV file : {}",
+                            log.debug("   Skip {} - Found CSV file : {}",
                                 apiDate, 
                                 summaryCsvPath.getParent().getParent().relativize(summaryCsvPath).toString());
                         }
                         apiDate = apiDate.minusDays(1);
                     }
-                    while (mostRecentDatabaseDate.isEqual(apiDate)
-                        || mostRecentDatabaseDate.isBefore(apiDate));
+                    while (consecutiveEmptyDays < STOP_AT_EMPTY_DAYS
+                        // && (mostRecentDatabaseDate != null 
+                        //     && (mostRecentDatabaseDate.isEqual(apiDate)
+                        //         || mostRecentDatabaseDate.isBefore(apiDate)))
+                    );
                 }
                 catch (InterruptedException ex) {
                     log.warn("Processing interrupted!", ex);
@@ -163,40 +189,11 @@ public class WeatherUndergroundApiScheduler {
             log.error(ex.getMessage(), ex);
         }
         finally {
-            log.info("****************************");
+            log.info("********************************************");
             log.info("Processed all Weather Underground API data");
-            log.info("****************************");
+            log.info("********************************************");
             IS_RUNNING.set(false);
         }
-    }
-
-    private void processValue(
-            Map<Integer, Double> low,
-            Map<Integer, Double> high,
-            Map<Integer, List<Double>> average,
-            int headerIndex,
-            double value
-    ) {
-        low.merge(headerIndex, value, Math::min);
-        high.merge(headerIndex, value, Math::max);
-        average.computeIfAbsent(headerIndex, k -> new ArrayList<>()).add(value);
-    }
-
-    private Map<Integer, Double> getCalculatedAverage(Map<Integer, List<Double>> average) {
-        Map<Integer, Double> calculatedAverage = average.entrySet().stream().collect(Collectors.toMap(
-            Map.Entry::getKey,
-            e -> {
-                List<Double> vals = e.getValue();
-                if (vals == null || vals.isEmpty()) {
-                    return 0.0;
-                }
-                double avg = vals.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-                return Conversions.roundToOneDecimal(avg);
-            },
-            (a, b) -> a,
-            LinkedHashMap::new
-        ));
-        return calculatedAverage;
     }
 
 }

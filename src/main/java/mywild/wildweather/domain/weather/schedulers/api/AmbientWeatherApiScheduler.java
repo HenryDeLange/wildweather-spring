@@ -113,13 +113,15 @@ public class AmbientWeatherApiScheduler {
                                 }
                             }
                             // Save the record to a CSV file
-                            Map<Integer, Double> calculatedAverage = getCalculatedAverage(average);
-                            CsvWriter.writeCsvFile(
-                                summaryCsvPath, 
-                                apiEndDate.toLocalDate(),
-                                new ArrayList<>(calculatedAverage.values()),
-                                new ArrayList<>(high.values()),
-                                new ArrayList<>(low.values()));
+                            if (readRecords >= 1) {
+                                Map<Integer, Double> calculatedAverage = getCalculatedAverage(average);
+                                CsvWriter.writeCsvFile(
+                                    summaryCsvPath, 
+                                    apiEndDate.toLocalDate(),
+                                    new ArrayList<>(calculatedAverage.values()),
+                                    new ArrayList<>(high.values()),
+                                    new ArrayList<>(low.values()));
+                            }
                             processedDays++;
                             // Sleep for 2 seconds to comply with API guidelines (of 1 request per second)
                             Thread.sleep(Duration.ofSeconds(2));

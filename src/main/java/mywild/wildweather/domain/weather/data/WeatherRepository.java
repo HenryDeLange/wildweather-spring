@@ -60,5 +60,15 @@ public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
         """)
     LocalDate findTopDateByStation(
         @Param("station") String station);
+    
+    @Query("""
+        SELECT w.date
+        FROM \"weather\" w
+        WHERE w.station = :station
+        ORDER BY date ASC
+        LIMIT 1
+        """)
+    LocalDate findBottomDateByStation(
+        @Param("station") String station);
 
 }
