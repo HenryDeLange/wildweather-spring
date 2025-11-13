@@ -34,7 +34,11 @@ public class ProcessSummaryFiles {
 
     private static final List<String> KNOWN_BAD_FILES = List.of(
         "Andante -> ambient-weather-high-lows-details-20241003-20251002.csv",
-        "Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv"
+        "Andante -> api-weather-underground-high-lows-details-20241201-20241231.csv",
+        "Andante -> api-weather-underground-high-lows-details-20241101-20241130.csv",
+        "Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv",
+        "Corgi Corner -> api-weather-underground-high-lows-details-20250101-20250131.csv",
+        "Corgi Corner -> api-weather-underground-high-lows-details-20250201-20250228.csv"
     );
 
     @Autowired
@@ -134,9 +138,11 @@ public class ProcessSummaryFiles {
                                         duplicates++;
                                     }
                                     else {
-                                        logBuilder.append("Inconsistent Duplicate!").append(System.lineSeparator());
-                                        logBuilder.append(MessageFormatter.format("   Entity : {}", entity).getMessage()).append(System.lineSeparator());
-                                        logBuilder.append(MessageFormatter.format("   Record : {}", record).getMessage()).append(System.lineSeparator());
+                                        if (!csvName.contains("api-weather-underground")) { // Don't log for weather underground files
+                                            logBuilder.append("Inconsistent Duplicate!").append(System.lineSeparator());
+                                            logBuilder.append(MessageFormatter.format("   Entity : {}", entity).getMessage()).append(System.lineSeparator());
+                                            logBuilder.append(MessageFormatter.format("   Record : {}", record).getMessage()).append(System.lineSeparator());   
+                                        }
                                         warnings++;
                                     }
                                 }

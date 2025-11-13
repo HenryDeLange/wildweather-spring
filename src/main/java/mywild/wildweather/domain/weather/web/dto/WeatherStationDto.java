@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class WeatherStatusDto {
+public class WeatherStationDto {
 
     @NotNull
     @NotBlank
@@ -24,6 +24,12 @@ public class WeatherStatusDto {
     
     @NotNull
     @NotBlank
-    private LocalDate lastProcessedOn;
+    private LocalDate startDate;
+
+    @NotNull
+    @NotBlank
+    private LocalDate endDate;
+
+    private boolean isMyStation;
 
 }

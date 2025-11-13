@@ -87,3 +87,4 @@ mywild:
         api-key: ${WEATHER_UNDERGROUND_API_KEY}
     csv:
         folder: ./
+    my-stations: Andante, Corgi Corner

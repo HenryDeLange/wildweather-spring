@@ -93,5 +93,10 @@
     "name": "mywild.weather-underground.api-key",
     "type": "java.lang.String",
     "description": "The Weather Underground API Key."
+  },
+  {
+    "name": "mywild.my-stations",
+    "type": "java.lang.String",
+    "description": "The names of the weather stations owned by myself."
   }
 ]}

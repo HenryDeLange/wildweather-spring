@@ -27,7 +27,7 @@ public class WeatherServiceTest {
 
         when(repo.searchWeather(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
 
-        var dto = svc.getWeather("s1", WeatherGrouping.DAILY, WeatherCategory.A, WeatherAggregate.AVERAGE, null,
+        var dto = svc.getWeather(List.of("s1"), WeatherGrouping.DAILY, WeatherCategory.A, WeatherAggregate.AVERAGE, null,
                 LocalDate.now(), LocalDate.now(), null, null);
         assertNotNull(dto);
         assertTrue(dto.getWeather().isEmpty());
