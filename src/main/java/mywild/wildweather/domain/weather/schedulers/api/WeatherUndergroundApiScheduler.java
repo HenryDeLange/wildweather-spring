@@ -36,9 +36,11 @@ import mywild.wildweather.domain.weather.schedulers.Utils;
 @Service
 public class WeatherUndergroundApiScheduler {
 
-    private static final int STOP_AT_EMPTY_RESPONSES = 6;
+    private static final int STOP_AT_EMPTY_RESPONSES = 12;
 
-    private static final DateTimeFormatter DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter API_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    private static final DateTimeFormatter BAD_DAYS_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
 
@@ -87,6 +89,11 @@ public class WeatherUndergroundApiScheduler {
                         log.info("Skipping Weather Underground API fetching for : {}", station);
                         continue;
                     }
+                    var apiFileContent = reader.readAllLines();
+                    List<String> badDays = null;
+                    if (apiFileContent.size() > 2) {
+                        badDays = List.of(apiFileContent.get(2).split(",\\s*"));
+                    }
                     log.info("----------------");
                     log.info("Processing Weather Underground API : {} -> {}", stationId, station);
                     LocalDate currentDate = LocalDate.now();
@@ -102,7 +109,7 @@ public class WeatherUndergroundApiScheduler {
                             // Fetch the API data
                             log.info("   Fetching data for : {} to {}", apiStarDate, apiEndDate);
                             var httpData = api.getDailyWithHttpInfo(stationId, FormatEnum.JSON, UnitsEnum.METRIC, 
-                                null, apiStarDate.format(DATE_FORMAT), apiEndDate.format(DATE_FORMAT),
+                                null, apiStarDate.format(API_DATE_FORMAT), apiEndDate.format(API_DATE_FORMAT),
                                 // apiStarDate.format(DATE_FORMAT), null, null,
                                 NumericPrecisionEnum.DECIMAL);
                             var data = httpData.getData();
@@ -116,38 +123,44 @@ public class WeatherUndergroundApiScheduler {
                                     List<Double> low = new ArrayList<>();
                                     List<Double> average = new ArrayList<>();
                                     List<Double> high = new ArrayList<>();
-                                    low     .add(dataRecord.getMetric().getTempLow());
-                                    average .add(dataRecord.getMetric().getTempAvg());
-                                    high    .add(dataRecord.getMetric().getTempHigh());
-                                    low     .add(dataRecord.getMetric().getWindspeedLow());
-                                    average .add(dataRecord.getMetric().getWindspeedAvg());
-                                    high    .add(dataRecord.getMetric().getWindspeedHigh());
-                                    low     .add(dataRecord.getMetric().getWindgustLow());
-                                    average .add(dataRecord.getMetric().getWindgustAvg());
-                                    high    .add(dataRecord.getMetric().getWindgustHigh());
-                                    low     .add(dataRecord.getWinddirAvg());
-                                    average .add(dataRecord.getWinddirAvg());
-                                    high    .add(dataRecord.getWinddirAvg());
-                                    low     .add(dataRecord.getMetric().getPrecipRate());
-                                    average .add(dataRecord.getMetric().getPrecipRate());
-                                    high    .add(dataRecord.getMetric().getPrecipRate());
-                                    low     .add(dataRecord.getMetric().getPrecipTotal());
-                                    average .add(dataRecord.getMetric().getPrecipTotal());
-                                    high    .add(dataRecord.getMetric().getPrecipTotal());
-                                    low     .add(dataRecord.getMetric().getPressureMin());
-                                    average .add(dataRecord.getMetric().getPressureTrend());
-                                    high    .add(dataRecord.getMetric().getPressureMax());
-                                    low     .add(dataRecord.getHumidityLow());
-                                    average .add(dataRecord.getHumidityAvg());
-                                    high    .add(dataRecord.getHumidityHigh());
-                                    low     .add(0.0);
-                                    average .add(dataRecord.getUvHigh() != null ? dataRecord.getUvHigh() / 2.0 : null);
-                                    high    .add(dataRecord.getUvHigh());
-                                    readRecords++;
-                                    dates.add(dataRecord.getObsTimeUtc().toLocalDate());
-                                    lows.add(low);
-                                    averages.add(average);
-                                    highs.add(high);
+                                    var recordDate = dataRecord.getObsTimeUtc().toLocalDate();
+                                    if (badDays == null || !badDays.contains(dataRecord.getObsTimeUtc().toLocalDate().format(BAD_DAYS_DATE_FORMAT))) {
+                                        low     .add(dataRecord.getMetric().getTempLow());
+                                        average .add(dataRecord.getMetric().getTempAvg());
+                                        high    .add(dataRecord.getMetric().getTempHigh());
+                                        low     .add(dataRecord.getMetric().getWindspeedLow());
+                                        average .add(dataRecord.getMetric().getWindspeedAvg());
+                                        high    .add(dataRecord.getMetric().getWindspeedHigh());
+                                        low     .add(dataRecord.getMetric().getWindgustLow());
+                                        average .add(dataRecord.getMetric().getWindgustAvg());
+                                        high    .add(dataRecord.getMetric().getWindgustHigh());
+                                        low     .add(dataRecord.getWinddirAvg());
+                                        average .add(dataRecord.getWinddirAvg());
+                                        high    .add(dataRecord.getWinddirAvg());
+                                        low     .add(dataRecord.getMetric().getPrecipRate());
+                                        average .add(dataRecord.getMetric().getPrecipRate());
+                                        high    .add(dataRecord.getMetric().getPrecipRate());
+                                        low     .add(dataRecord.getMetric().getPrecipTotal());
+                                        average .add(dataRecord.getMetric().getPrecipTotal());
+                                        high    .add(dataRecord.getMetric().getPrecipTotal());
+                                        low     .add(dataRecord.getMetric().getPressureMin());
+                                        average .add(dataRecord.getMetric().getPressureTrend());
+                                        high    .add(dataRecord.getMetric().getPressureMax());
+                                        low     .add(dataRecord.getHumidityLow());
+                                        average .add(dataRecord.getHumidityAvg());
+                                        high    .add(dataRecord.getHumidityHigh());
+                                        low     .add(0.0);
+                                        average .add(dataRecord.getUvHigh() != null ? dataRecord.getUvHigh() / 2.0 : null);
+                                        high    .add(dataRecord.getUvHigh());
+                                        readRecords++;
+                                        dates.add(recordDate);
+                                        lows.add(low);
+                                        averages.add(average);
+                                        highs.add(high);
+                                    }
+                                    else {
+                                        log.info("       Skip known bad day : {}", recordDate);
+                                    }
                                 }
                                 // Save the record to a CSV file
                                 if (readRecords >= 1) {
@@ -181,7 +194,7 @@ public class WeatherUndergroundApiScheduler {
                         apiStarDate = apiStarDate.minusMonths(1);
                         apiEndDate = apiStarDate.plusMonths(1).minusDays(1);
                     }
-                    while ((fetchAllData && (consecutiveEmptyResponses < STOP_AT_EMPTY_RESPONSES))
+                    while ((consecutiveEmptyResponses < STOP_AT_EMPTY_RESPONSES)
                         || (!fetchAllData && (mostRecentDatabaseDate == null
                             || mostRecentDatabaseDate.withDayOfMonth(1).isBefore(apiStarDate)))
                     );

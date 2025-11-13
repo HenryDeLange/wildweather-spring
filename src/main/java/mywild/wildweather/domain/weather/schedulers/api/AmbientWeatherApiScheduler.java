@@ -94,7 +94,8 @@ public class AmbientWeatherApiScheduler {
                             Map<Integer, Double> high = new LinkedHashMap<>();
                             Map<Integer, List<Double>> average = new LinkedHashMap<>();
                             for (var dataRecord : data) {
-                                if (dataRecord.getDate().toLocalDate().equals(apiEndDate.toLocalDate())) {
+                                var recordDate = dataRecord.getDate().toLocalDate();
+                                if (recordDate.equals(apiEndDate.toLocalDate())) {
                                     processValue(low, high, average, 0, Conversions.fahToCel(dataRecord.getTempf()));
                                     processValue(low, high, average, 1, Conversions.mphToKmh(dataRecord.getWindspeedmph()));
                                     processValue(low, high, average, 2, Conversions.mphToKmh(dataRecord.getWindgustmph()));
@@ -108,7 +109,7 @@ public class AmbientWeatherApiScheduler {
                                 }
                                 else {
                                     log.debug("   Not processing records for date {} while busy processing {}",
-                                        dataRecord.getDate().toLocalDate(), apiEndDate.toLocalDate());
+                                        recordDate, apiEndDate.toLocalDate());
                                     break;
                                 }
                             }
