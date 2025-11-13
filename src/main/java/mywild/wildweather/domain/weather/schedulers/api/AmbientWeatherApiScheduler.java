@@ -35,8 +35,6 @@ import mywild.wildweather.domain.weather.schedulers.Utils;
 @Service
 public class AmbientWeatherApiScheduler {
 
-    private static final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
-    private static final int SCHEDULE_RATE = 1 * 60 * 60 * 1000; // 1 hours
     private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // 288 (Every 5 minutes)
 
     private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
@@ -50,7 +48,7 @@ public class AmbientWeatherApiScheduler {
     @Autowired
     private WeatherRepository repo;
 
-    @Scheduled(initialDelay = SCHEDULE_DELAY, fixedRate = SCHEDULE_RATE)
+    @Scheduled(cron = "0 0 2 * * *") // Run at 2AM
     void scheduledApiProcessing() {
         processApiData();
     }
@@ -59,6 +57,7 @@ public class AmbientWeatherApiScheduler {
         return IS_RUNNING.get();
     }
 
+    @SuppressWarnings("null")
     @Async
     public void processApiData() {
         if (!IS_RUNNING.compareAndSet(false, true)) {
@@ -71,7 +70,7 @@ public class AmbientWeatherApiScheduler {
             log.info("****************************************");
             List<Path> macAddressFiles = paths
                 .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith("macAddress.txt"))
+                .filter(path -> path.toString().endsWith("api-ambient-weather-mac-address.txt"))
                 .toList();
             for (var macAddressPath : macAddressFiles) {
                 var station = Utils.getStationName(macAddressPath);
@@ -84,7 +83,8 @@ public class AmbientWeatherApiScheduler {
                     log.info("Processing Ambient Weather API : {}", station);
                     OffsetDateTime apiEndDate = LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC).minusSeconds(1); // Yesterday midnight
                     do {
-                        var summaryCsvPath = CsvWriter.getCsvPath(macAddressPath.getParent(), apiEndDate.toLocalDateTime());
+                        var summaryCsvPath = CsvWriter.getCsvPath("ambient-weather",
+                            macAddressPath.getParent(), apiEndDate.toLocalDate(), null);
                         if (summaryCsvPath != null && !Files.exists(summaryCsvPath)) {
                             // Fetch the API data
                             log.info("   Fetching data for : {}", apiEndDate.toLocalDate());
@@ -115,7 +115,7 @@ public class AmbientWeatherApiScheduler {
                             // Save the record to a CSV file
                             if (readRecords >= 1) {
                                 Map<Integer, Double> calculatedAverage = getCalculatedAverage(average);
-                                CsvWriter.writeCsvFile(
+                                CsvWriter.writeSingleDayCsvFile(
                                     summaryCsvPath, 
                                     apiEndDate.toLocalDate(),
                                     new ArrayList<>(calculatedAverage.values()),

@@ -6,17 +6,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +18,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
-import mywild.ambientweather.openapi.client.api.AmbientWeatherApi;
 import mywild.weatherunderground.openapi.client.api.WeatherUndergroundApi;
 import mywild.weatherunderground.openapi.client.model.FormatEnum;
 import mywild.weatherunderground.openapi.client.model.NumericPrecisionEnum;
@@ -43,9 +36,7 @@ import mywild.wildweather.domain.weather.schedulers.Utils;
 @Service
 public class WeatherUndergroundApiScheduler {
 
-    private static final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
-    private static final int SCHEDULE_RATE = 1 * 60 * 60 * 1000; // 1 hours
-    private static final int STOP_AT_EMPTY_DAYS = 5;
+    private static final int STOP_AT_EMPTY_RESPONSES = 6;
 
     private static final DateTimeFormatter DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -60,17 +51,18 @@ public class WeatherUndergroundApiScheduler {
     @Autowired
     private WeatherRepository repo;
 
-    // @Scheduled(initialDelay = SCHEDULE_DELAY, fixedRate = SCHEDULE_RATE)
+    @Scheduled(cron = "0 0 3 * * *") // Run at 3AM
     void scheduledApiProcessing() {
-        processApiData();
+        processApiData(false);
     }
 
     public boolean isRunning() {
         return IS_RUNNING.get();
     }
 
+    @SuppressWarnings("null")
     @Async
-    public void processApiData() {
+    public void processApiData(boolean fetchAllData) {
         if (!IS_RUNNING.compareAndSet(false, true)) {
             log.warn("Already busy processing Weather Underground data... The new request will be ignored.");
             return;
@@ -81,13 +73,14 @@ public class WeatherUndergroundApiScheduler {
             log.info("********************************************");
             List<Path> stationIdFiles = paths
                 .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith("WeatherUnderground-StationId.txt"))
+                .filter(path -> path.toString().endsWith("api-weather-underground-station-id.txt"))
                 .toList();
             for (var stationIdPath : stationIdFiles) {
                 var station = Utils.getStationName(stationIdPath);
+                LocalDate mostRecentDatabaseDate = repo.findTopDateByStation(station);
                 var readRecords = 0;
-                var processedDays = 0;
-                var consecutiveEmptyDays = 0;
+                var processedMonths = 0;
+                var consecutiveEmptyResponses = 0;
                 try (var reader = Files.newBufferedReader(stationIdPath)) {
                     var stationId = reader.readLine();
                     if (stationId.equalsIgnoreCase("SKIP")) {
@@ -96,22 +89,33 @@ public class WeatherUndergroundApiScheduler {
                     }
                     log.info("----------------");
                     log.info("Processing Weather Underground API : {} -> {}", stationId, station);
-                    LocalDate apiDate = LocalDate.now().minusDays(1); // Yesterday midnight
+                    LocalDate currentDate = LocalDate.now();
+                    LocalDate apiEndDate = currentDate.minusDays(1); // Yesterday midnight
+                    LocalDate apiStarDate = LocalDate.now().withDayOfMonth(1); // Start of the current month
                     do {
-                        var summaryCsvPath = CsvWriter.getCsvPath(stationIdPath.getParent(), LocalDateTime.of(apiDate, LocalTime.MIDNIGHT));
-                        if (summaryCsvPath != null && !Files.exists(summaryCsvPath)) {
+                        var summaryCsvPath = CsvWriter.getCsvPath("weather-underground",
+                            stationIdPath.getParent(), apiStarDate, apiEndDate.with(TemporalAdjusters.lastDayOfMonth()));
+                        // Only generate files for observation months that are new, or for the current month
+                        if ((summaryCsvPath != null && !Files.exists(summaryCsvPath))
+                                || apiEndDate.equals(currentDate.minusDays(1))
+                                || fetchAllData) {
                             // Fetch the API data
-                            log.info("   Fetching data for : {}", apiDate);
-// TODO: rather fetch a month at a time
-                            var httpData = api.getDailyWithHttpInfo(stationId, apiDate.format(DATE_FORMAT), 
-                                FormatEnum.JSON, UnitsEnum.METRIC, null, null, NumericPrecisionEnum.DECIMAL);
+                            log.info("   Fetching data for : {} to {}", apiStarDate, apiEndDate);
+                            var httpData = api.getDailyWithHttpInfo(stationId, FormatEnum.JSON, UnitsEnum.METRIC, 
+                                null, apiStarDate.format(DATE_FORMAT), apiEndDate.format(DATE_FORMAT),
+                                // apiStarDate.format(DATE_FORMAT), null, null,
+                                NumericPrecisionEnum.DECIMAL);
                             var data = httpData.getData();
                             if (data != null && data.getObservations() != null && !data.getObservations().isEmpty()) {
                                 // Calculate the daily low/ave/high values
-                                List<Double> low = new ArrayList<>();
-                                List<Double> high = new ArrayList<>();
-                                List<Double> average = new ArrayList<>();
+                                List<LocalDate> dates = new ArrayList<>();
+                                List<List<Double>> lows = new ArrayList<>();
+                                List<List<Double>> averages = new ArrayList<>();
+                                List<List<Double>> highs = new ArrayList<>();
                                 for (var dataRecord : data.getObservations()) {
+                                    List<Double> low = new ArrayList<>();
+                                    List<Double> average = new ArrayList<>();
+                                    List<Double> high = new ArrayList<>();
                                     low     .add(dataRecord.getMetric().getTempLow());
                                     average .add(dataRecord.getMetric().getTempAvg());
                                     high    .add(dataRecord.getMetric().getTempHigh());
@@ -140,40 +144,46 @@ public class WeatherUndergroundApiScheduler {
                                     average .add(dataRecord.getUvHigh() != null ? dataRecord.getUvHigh() / 2.0 : null);
                                     high    .add(dataRecord.getUvHigh());
                                     readRecords++;
+                                    dates.add(dataRecord.getObsTimeUtc().toLocalDate());
+                                    lows.add(low);
+                                    averages.add(average);
+                                    highs.add(high);
                                 }
                                 // Save the record to a CSV file
                                 if (readRecords >= 1) {
-                                    CsvWriter.writeCsvFile(
+                                    CsvWriter.writeMultiDayCsvFile(
                                         summaryCsvPath, 
-                                        apiDate,
-                                        new ArrayList<>(average),
-                                        new ArrayList<>(high),
-                                        new ArrayList<>(low));
+                                        dates,
+                                        averages,
+                                        highs,
+                                        lows);
                                 }
-                                consecutiveEmptyDays = 0;
+                                consecutiveEmptyResponses = 0;
                             }
                             else {
-                                log.info("   No data returned : {} - {}", httpData.getStatusCode(), 
+                                consecutiveEmptyResponses++;
+                                log.info("       No data returned (count: {}) : {} - {}",
+                                    consecutiveEmptyResponses, 
+                                    httpData.getStatusCode(), 
                                     httpData.getData() == null ? "Response was null" 
                                         : httpData.getData().getObservations() == null ? "Observations was null"
                                             : "Observations was empty");
-                                consecutiveEmptyDays++;
                             }
-                            processedDays++;
+                            processedMonths++;
                             // Sleep for 1 seconds to not spam the api too much
                             Thread.sleep(Duration.ofSeconds(1));
                         }
                         else {
                             log.debug("   Skip {} - Found CSV file : {}",
-                                apiDate, 
+                                apiEndDate, 
                                 summaryCsvPath.getParent().getParent().relativize(summaryCsvPath).toString());
                         }
-                        apiDate = apiDate.minusDays(1);
+                        apiStarDate = apiStarDate.minusMonths(1);
+                        apiEndDate = apiStarDate.plusMonths(1).minusDays(1);
                     }
-                    while (consecutiveEmptyDays < STOP_AT_EMPTY_DAYS
-                        // && (mostRecentDatabaseDate != null 
-                        //     && (mostRecentDatabaseDate.isEqual(apiDate)
-                        //         || mostRecentDatabaseDate.isBefore(apiDate)))
+                    while ((fetchAllData && (consecutiveEmptyResponses < STOP_AT_EMPTY_RESPONSES))
+                        || (!fetchAllData && (mostRecentDatabaseDate == null
+                            || mostRecentDatabaseDate.withDayOfMonth(1).isBefore(apiStarDate)))
                     );
                 }
                 catch (InterruptedException ex) {
@@ -181,7 +191,7 @@ public class WeatherUndergroundApiScheduler {
                 }
                 finally {
                     log.info("   Read Records   : {}", readRecords);
-                    log.info("   Processed Days : {}", processedDays);
+                    log.info("   Processed Months : {}", processedMonths);
                 }
             }
         }

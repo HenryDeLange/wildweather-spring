@@ -220,6 +220,7 @@
                                 <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
                                 <useEnumCaseInsensitive>true</useEnumCaseInsensitive>
                                 <useRuntimeException>true</useRuntimeException>
+                                <useGzipFeature>true</useGzipFeature>
                             </configOptions>
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
@@ -251,6 +252,7 @@
                                 <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
                                 <useEnumCaseInsensitive>true</useEnumCaseInsensitive>
                                 <useRuntimeException>true</useRuntimeException>
+                                <useGzipFeature>true</useGzipFeature>
                             </configOptions>
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>

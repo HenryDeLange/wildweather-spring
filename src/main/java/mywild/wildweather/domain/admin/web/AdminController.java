@@ -45,8 +45,8 @@ public class AdminController extends BaseController {
 
     @Operation(summary = "Manually trigger the processing of Weather Underground API data.")
     @PostMapping("/admin/process/api/weather-underground")
-    public void triggerWeatherUndergroundApiProcessing() {
-        service.triggerWeatherUndergroundApiProcessing();
+    public void triggerWeatherUndergroundApiProcessing(@RequestParam(required = false) boolean fetchAllData) {
+        service.triggerWeatherUndergroundApiProcessing(fetchAllData);
     }
 
     @Operation(summary = "Status of processing the Weather Underground API data.")

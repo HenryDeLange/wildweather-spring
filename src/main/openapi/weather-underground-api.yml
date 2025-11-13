@@ -34,11 +34,11 @@ components:
     date:
       name: date
       in: query
-      required: true
+      required: false
       schema:
         type: string
         pattern: '^\d{8}$'
-      description: Specific date in YYYYMMDD format
+      description: Specific date in YYYYMMDD format. Must specify either "date" or "startDate" + "endDate".
 
     startDate:
       name: startDate
@@ -47,7 +47,7 @@ components:
       schema:
         type: string
         pattern: '^\d{8}$'
-      description: Start date for range queries (YYYYMMDD)
+      description: Start date for range queries (YYYYMMDD). Must specify either "date" or "startDate" + "endDate".
 
     endDate:
       name: endDate
@@ -56,7 +56,7 @@ components:
       schema:
         type: string
         pattern: '^\d{8}$'
-      description: End date for range queries (YYYYMMDD)
+      description: End date for range queries (YYYYMMDD). Must specify either "date" or "startDate" + "endDate".
 
     format:
       name: format

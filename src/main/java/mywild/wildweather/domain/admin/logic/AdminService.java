@@ -44,8 +44,8 @@ public class AdminService {
         return new ApiStatus(ambientWeatherApiScheduler.isRunning());
     }
 
-    public void triggerWeatherUndergroundApiProcessing() {
-        weatherUndergroundApiScheduler.processApiData();
+    public void triggerWeatherUndergroundApiProcessing(boolean fetchAllData) {
+        weatherUndergroundApiScheduler.processApiData(fetchAllData);
     }
 
     public @Valid ApiStatus getWeatherUndergroundApiProcessStatus() {

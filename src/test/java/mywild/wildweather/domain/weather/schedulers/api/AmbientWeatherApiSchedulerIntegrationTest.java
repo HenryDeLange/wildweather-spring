@@ -28,7 +28,7 @@ public class AmbientWeatherApiSchedulerIntegrationTest {
 
         Path stationDir = tempDir.resolve("station1");
         Files.createDirectories(stationDir);
-        Path macFile = stationDir.resolve("macAddress.txt");
+        Path macFile = stationDir.resolve("api-ambient-weather-mac-address.txt");
         String macAddress = "AA:BB:CC:DD";
         Files.writeString(macFile, macAddress);
 
@@ -73,12 +73,12 @@ public class AmbientWeatherApiSchedulerIntegrationTest {
         flag.set(false);
 
         try (MockedStatic<CsvWriter> csvMock = Mockito.mockStatic(CsvWriter.class)) {
-            csvMock.when(() -> CsvWriter.getCsvPath(any(), any())).thenReturn(stationDir.resolve("out.csv"));
-            csvMock.when(() -> CsvWriter.writeCsvFile(any(), any(), any(), any(), any())).thenAnswer(i -> null);
+            csvMock.when(() -> CsvWriter.getCsvPath(any(), any(), any(), any())).thenReturn(stationDir.resolve("out.csv"));
+            csvMock.when(() -> CsvWriter.writeSingleDayCsvFile(any(), any(), any(), any(), any())).thenAnswer(i -> null);
 
             scheduler.processApiData();
 
-            csvMock.verify(() -> CsvWriter.writeCsvFile(any(), any(), any(), any(), any()));
+            csvMock.verify(() -> CsvWriter.writeSingleDayCsvFile(any(), any(), any(), any(), any()));
         }
     }
 

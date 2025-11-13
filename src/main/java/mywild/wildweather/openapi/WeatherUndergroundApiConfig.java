@@ -20,7 +20,6 @@ public class WeatherUndergroundApiConfig {
         ApiClient apiClient = mywild.weatherunderground.openapi.client.Configuration.getDefaultApiClient();
         ApiKeyAuth apiKeyAuth = (ApiKeyAuth) apiClient.getAuthentication("ApiKeyAuth");
         apiKeyAuth.setApiKey(apiKey);
-        apiClient.addDefaultHeader("Accept-Encoding", "gzip");
         return apiClient;
     }
 

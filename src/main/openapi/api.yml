@@ -159,6 +159,12 @@ paths:
       - Admin
       summary: Manually trigger the processing of Weather Underground API data.
       operationId: triggerWeatherUndergroundApiProcessing
+      parameters:
+      - name: fetchAllData
+        in: query
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           description: OK

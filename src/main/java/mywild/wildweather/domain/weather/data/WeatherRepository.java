@@ -64,7 +64,7 @@ public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
     @Query("""
         SELECT w.date
         FROM \"weather\" w
-        WHERE w.station = :station
+        WHERE (:station IS NULL OR w.station = :station)
         ORDER BY date ASC
         LIMIT 1
         """)
