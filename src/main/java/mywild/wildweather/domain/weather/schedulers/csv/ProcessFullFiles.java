@@ -108,7 +108,7 @@ public class ProcessFullFiles {
                     for (var temp : entities) {
                         if (temp.getDate().equals(entry.getKey().date())) {
                             if (entry.getValue() < EXPECTED_RECORDS_PER_DAY) {
-                                temp.setMissing(Math.round((EXPECTED_RECORDS_PER_DAY - entry.getValue()) / (double) EXPECTED_RECORDS_PER_DAY * 100.0));
+                                temp.setMissing((double) Math.round((EXPECTED_RECORDS_PER_DAY - entry.getValue()) / (double) EXPECTED_RECORDS_PER_DAY * 100.0));
                                 missing++;
                             }
                             else if (entry.getValue() > EXPECTED_RECORDS_PER_DAY) {
@@ -146,7 +146,7 @@ public class ProcessFullFiles {
                                         .date(prevDate.plusDays(i))
                                         .category(category)
                                         .windDirection("")
-                                        .missing(100)
+                                        .missing(100.0)
                                     .build()
                                 );
                             }

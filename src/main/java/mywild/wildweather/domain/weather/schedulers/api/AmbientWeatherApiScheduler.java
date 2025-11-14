@@ -35,6 +35,8 @@ import mywild.wildweather.domain.weather.schedulers.Utils;
 @Service
 public class AmbientWeatherApiScheduler {
 
+    public static final String AW_CSV_PREFIX = "api-ambient-weather";
+
     private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // 288 (Every 5 minutes)
 
     private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
@@ -70,7 +72,7 @@ public class AmbientWeatherApiScheduler {
             log.info("****************************************");
             List<Path> macAddressFiles = paths
                 .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith("api-ambient-weather-mac-address.txt"))
+                .filter(path -> path.toString().endsWith(AW_CSV_PREFIX + "-mac-address.txt"))
                 .toList();
             for (var macAddressPath : macAddressFiles) {
                 var station = Utils.getStationName(macAddressPath);
@@ -83,7 +85,7 @@ public class AmbientWeatherApiScheduler {
                     log.info("Processing Ambient Weather API : {}", station);
                     OffsetDateTime apiEndDate = LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC).minusSeconds(1); // Yesterday midnight
                     do {
-                        var summaryCsvPath = CsvWriter.getCsvPath("ambient-weather",
+                        var summaryCsvPath = CsvWriter.getCsvPath(AW_CSV_PREFIX,
                             macAddressPath.getParent(), apiEndDate.toLocalDate(), null);
                         if (summaryCsvPath != null && !Files.exists(summaryCsvPath)) {
                             // Fetch the API data

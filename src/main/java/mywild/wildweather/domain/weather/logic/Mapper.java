@@ -50,8 +50,8 @@ final public class Mapper {
             WeatherFieldExtractor.EXTRACTORS.forEach((field, extractor) -> {
                 if (weatherFields == null || weatherFields.isEmpty() || weatherFields.contains(field)) {
                     var fieldMap = groupMap.computeIfAbsent(field.getKey(), _ -> new LinkedHashMap<>());
-                    if (weatherDay.getMissing() < 100 || field == WeatherField.MISSING) {
-                        var value = extractor.apply(weatherDay);
+                    var value = extractor.apply(weatherDay);
+                    if (value != null && (weatherDay.getMissing() < 100 || field == WeatherField.MISSING)) {
                         if (category == WeatherCategory.H) {
                             fieldMap.merge(category, value, calcAverage ? Math::max : Double::sum);
                         }

@@ -25,6 +25,7 @@ import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
 import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
 import mywild.wildweather.domain.weather.schedulers.SchedulerThreadFactory;
 import mywild.wildweather.domain.weather.schedulers.Utils;
+import mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler;
 
 @Slf4j
 @Component
@@ -34,11 +35,7 @@ public class ProcessSummaryFiles {
 
     private static final List<String> KNOWN_BAD_FILES = List.of(
         "Andante -> ambient-weather-high-lows-details-20241003-20251002.csv",
-        "Andante -> api-weather-underground-high-lows-details-20241201-20241231.csv",
-        "Andante -> api-weather-underground-high-lows-details-20241101-20241130.csv",
-        "Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv",
-        "Corgi Corner -> api-weather-underground-high-lows-details-20250101-20250131.csv",
-        "Corgi Corner -> api-weather-underground-high-lows-details-20250201-20250228.csv"
+        "Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv"
     );
 
     @Autowired
@@ -53,18 +50,29 @@ public class ProcessSummaryFiles {
             .toList();
         List<Path> fineScaleCsvFiles = Collections.synchronizedList(new ArrayList<>());
         List<Callable<Void>> tasks = new ArrayList<>();
-        csvFiles.forEach(csvFile -> {
-            tasks.add(() -> {
-                var isSummaryFile = processSummaryFile(csvFile);
-                if (!isSummaryFile) {
-                    fineScaleCsvFiles.add(csvFile);
-                }
-                return null;
-            });
+        csvFiles.stream()
+            .filter(path -> !path.toString().toLowerCase(Locale.ROOT).contains("api-weather-underground"))
+            .forEach(csvFile -> {
+                tasks.add(() -> {
+                    var isSummaryFile = processSummaryFile(csvFile);
+                    if (!isSummaryFile) {
+                        fineScaleCsvFiles.add(csvFile);
+                    }
+                    return null;
+                });
         });
         ExecutorService executor = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors(),
             new SchedulerThreadFactory("s-csv-"));
+        executor.invokeAll(tasks);
+        csvFiles.stream()
+            .filter(path -> path.toString().toLowerCase(Locale.ROOT).contains(WeatherUndergroundApiScheduler.WU_CSV_PREFIX))
+            .forEach(csvFile -> {
+                tasks.add(() -> {
+                    processSummaryFile(csvFile);
+                    return null;
+                });
+        });
         executor.invokeAll(tasks);
         executor.shutdown();
         return fineScaleCsvFiles;
@@ -92,15 +100,15 @@ public class ProcessSummaryFiles {
                             var category = WeatherCategory.valueOf(categoryRecord.substring(0, 1));
                             var date = LocalDate.parse(record.get("Date"));
                             var station = Utils.getStationName(csvFile);
-                            var temperature = Double.parseDouble(record.get("Outdoor Temperature"));
-                            var windSpeed = Double.parseDouble(record.get("Wind Speed"));
-                            var windMax = Double.parseDouble(record.get("Max Daily Gust"));
-                            var windDirection = record.get("Wind Direction");
-                            var rainRate = Double.parseDouble(record.get("Rain Rate"));
-                            var rainDaily = Double.parseDouble(record.get("Daily Rain"));
-                            var pressure = Double.parseDouble(record.get("Relative Pressure"));
-                            var humidity = Double.parseDouble(record.get("Humidity"));
-                            var uvRadiationIndex = Double.parseDouble(record.get("Ultra-Violet Radiation Index"));
+                            var temperature = getDoubleValue(record.get("Outdoor Temperature"));
+                            var windSpeed = getDoubleValue(record.get("Wind Speed"));
+                            var windMax = getDoubleValue(record.get("Max Daily Gust"));
+                            var windDirection = getStringValue(record.get("Wind Direction"));
+                            var rainRate = getDoubleValue(record.get("Rain Rate"));
+                            var rainDaily = getDoubleValue(record.get("Daily Rain"));
+                            var pressure = getDoubleValue(record.get("Relative Pressure"));
+                            var humidity = getDoubleValue(record.get("Humidity"));
+                            var uvRadiationIndex = getDoubleValue(record.get("Ultra-Violet Radiation Index"));
                             // TODO: Maybe better to build a map in memory and then save the map once-off after all the tasks are done
                             synchronized (DATABASE_LOCK) {
                                 var entity = repo.findByDateAndStationAndCategory(date, station, category);
@@ -150,7 +158,7 @@ public class ProcessSummaryFiles {
                         }
                     }
                     catch (NumberFormatException ex) {
-                        if (KNOWN_BAD_FILES.contains(csvName)) {
+                        if (KNOWN_BAD_FILES.contains(csvName) || csvName.contains("api-weather-underground")) {
                             log.debug("Could not process record due to (known) number format error.");
                             log.debug("   CSV File : {}", csvName);
                             log.trace("   Headers  : {}", Arrays.toString(headers));
@@ -193,6 +201,20 @@ public class ProcessSummaryFiles {
         log.info(logBuilder.toString());
         WeatherCsvScheduler.markFileAsProcessed(csvName);
         return true;
+    }
+
+    private Double getDoubleValue(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return Double.valueOf(value);
+    }
+
+    private String getStringValue(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 
 }

@@ -35,7 +35,7 @@ final public class CsvWriter {
         "Ultra-Violet Radiation Index"  // 8
     };
 
-    private static final String SUMMARY_CSV_PREFIX = "api-{SOURCE}-high-lows-details-";
+    private static final String SUMMARY_CSV_PREFIX = "{SOURCE}-high-lows-details-";
 
     private static final DateTimeFormatter CSV_NAME_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
 

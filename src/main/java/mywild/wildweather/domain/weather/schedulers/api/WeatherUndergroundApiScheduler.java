@@ -36,6 +36,8 @@ import mywild.wildweather.domain.weather.schedulers.Utils;
 @Service
 public class WeatherUndergroundApiScheduler {
 
+    public static final String WU_CSV_PREFIX = "api-weather-underground";
+
     private static final int STOP_AT_EMPTY_RESPONSES = 12;
 
     private static final DateTimeFormatter API_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -75,7 +77,7 @@ public class WeatherUndergroundApiScheduler {
             log.info("********************************************");
             List<Path> stationIdFiles = paths
                 .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith("api-weather-underground-station-id.txt"))
+                .filter(path -> path.toString().endsWith(WU_CSV_PREFIX + "-station-id.txt"))
                 .toList();
             for (var stationIdPath : stationIdFiles) {
                 var station = Utils.getStationName(stationIdPath);
@@ -100,7 +102,7 @@ public class WeatherUndergroundApiScheduler {
                     LocalDate apiEndDate = currentDate.minusDays(1); // Yesterday midnight
                     LocalDate apiStarDate = LocalDate.now().withDayOfMonth(1); // Start of the current month
                     do {
-                        var summaryCsvPath = CsvWriter.getCsvPath("weather-underground",
+                        var summaryCsvPath = CsvWriter.getCsvPath(WU_CSV_PREFIX,
                             stationIdPath.getParent(), apiStarDate, apiEndDate.with(TemporalAdjusters.lastDayOfMonth()));
                         // Only generate files for observation months that are new, or for the current month
                         if ((summaryCsvPath != null && !Files.exists(summaryCsvPath))
