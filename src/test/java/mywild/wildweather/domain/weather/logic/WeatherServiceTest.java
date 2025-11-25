@@ -41,9 +41,15 @@ public class WeatherServiceTest {
         repoField.setAccessible(true);
         repoField.set(svc, repo);
 
+        var myStationsField = WeatherService.class.getDeclaredField("myStations");
+        myStationsField.setAccessible(true);
+        myStationsField.set(svc, List.of("s1"));
+
         when(repo.findStations()).thenReturn(List.of("s1", "s2"));
-        when(repo.findTopDateByStation("s1")).thenReturn(LocalDate.of(2025, 1, 1));
-        when(repo.findTopDateByStation("s2")).thenReturn(LocalDate.of(2025, 1, 2));
+        when(repo.findBottomDateByStation("s1")).thenReturn(LocalDate.of(2025, 1, 1));
+        when(repo.findTopDateByStation("s1")).thenReturn(LocalDate.of(2025, 1, 15));
+        when(repo.findBottomDateByStation("s2")).thenReturn(LocalDate.of(2025, 1, 2));
+        when(repo.findTopDateByStation("s2")).thenReturn(LocalDate.of(2025, 1, 20));
 
         var stations = svc.getWeatherStations();
         assertEquals(2, stations.size());
@@ -51,6 +57,8 @@ public class WeatherServiceTest {
         var status = svc.getWeatherStatus();
         assertEquals(2, status.size());
         assertEquals("s1", status.get(0).getStation());
+        assertTrue(status.get(0).isMyStation());
+        assertTrue(!status.get(1).isMyStation());
     }
 
 }

@@ -38,7 +38,7 @@ public class WeatherUndergroundApiScheduler {
 
     public static final String WU_CSV_PREFIX = "api-weather-underground";
 
-    private static final int STOP_AT_EMPTY_RESPONSES = 12;
+    private static final int STOP_AT_EMPTY_RESPONSES = 24; // Months without data
 
     private static final DateTimeFormatter API_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -87,7 +87,7 @@ public class WeatherUndergroundApiScheduler {
                 var consecutiveEmptyResponses = 0;
                 try (var reader = Files.newBufferedReader(stationIdPath)) {
                     var stationId = reader.readLine();
-                    if (stationId.equalsIgnoreCase("SKIP")) {
+                    if (stationId != null && stationId.equalsIgnoreCase("SKIP")) {
                         log.info("Skipping Weather Underground API fetching for : {}", station);
                         continue;
                     }
@@ -105,14 +105,15 @@ public class WeatherUndergroundApiScheduler {
                         var summaryCsvPath = CsvWriter.getCsvPath(WU_CSV_PREFIX,
                             stationIdPath.getParent(), apiStarDate, apiEndDate.with(TemporalAdjusters.lastDayOfMonth()));
                         // Only generate files for observation months that are new, or for the current month
-                        if ((summaryCsvPath != null && !Files.exists(summaryCsvPath))
+                        if (fetchAllData
                                 || apiEndDate.equals(currentDate.minusDays(1))
-                                || fetchAllData) {
+                                || (summaryCsvPath != null && !Files.exists(summaryCsvPath))) {
                             // Fetch the API data
-                            log.info("   Fetching data for : {} to {}", apiStarDate, apiEndDate);
+                            log.info("   Fetching data for {} : {} to {}", stationId, apiStarDate.format(API_DATE_FORMAT), apiEndDate.format(API_DATE_FORMAT));
+                            // Example URL:
+                            // https://api.weather.com/v2/pws/history/daily?startDate=20250101&endDate=20250131&format=json&units=m&numericPrecision=decimal&stationId=<STATION>&apiKey=<APIKEY>
                             var httpData = api.getDailyWithHttpInfo(stationId, FormatEnum.JSON, UnitsEnum.METRIC, 
                                 null, apiStarDate.format(API_DATE_FORMAT), apiEndDate.format(API_DATE_FORMAT),
-                                // apiStarDate.format(DATE_FORMAT), null, null,
                                 NumericPrecisionEnum.DECIMAL);
                             var data = httpData.getData();
                             if (data != null && data.getObservations() != null && !data.getObservations().isEmpty()) {
@@ -196,9 +197,10 @@ public class WeatherUndergroundApiScheduler {
                         apiStarDate = apiStarDate.minusMonths(1);
                         apiEndDate = apiStarDate.plusMonths(1).minusDays(1);
                     }
-                    while ((consecutiveEmptyResponses < STOP_AT_EMPTY_RESPONSES)
-                        || (!fetchAllData && (mostRecentDatabaseDate == null
-                            || mostRecentDatabaseDate.withDayOfMonth(1).isBefore(apiStarDate)))
+                    while (
+                        (consecutiveEmptyResponses < STOP_AT_EMPTY_RESPONSES)
+                        && (fetchAllData || mostRecentDatabaseDate == null
+                            || mostRecentDatabaseDate.withDayOfMonth(1).isBefore(apiStarDate))
                     );
                 }
                 catch (InterruptedException ex) {

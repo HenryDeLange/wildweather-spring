@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -87,7 +88,7 @@ public class ProcessSummaryFiles {
         var duplicates = 0;
         var warnings = 0;
         var errors = 0;
-        var missing = (csvName.contains("estimates-") || csvName.contains("api-")) ? 99.99 : 0;
+        var missing = csvName.contains("estimates-") ? 99.99 : 0;
         try (var reader = Files.newBufferedReader(csvFile)) {
             String[] headers = CsvUtils.getHeaders(reader);
             var isSummaryCsv = headers[0].equals("COL0");
@@ -133,15 +134,15 @@ public class ProcessSummaryFiles {
                                     newRecords++;
                                 }
                                 else {
-                                    if (entity.getTemperature() == temperature
-                                            || entity.getWindSpeed() == windSpeed
-                                            || entity.getWindMax() == windMax
-                                            || entity.getWindDirection().equals(windDirection)
-                                            || entity.getRainRate() == rainRate
-                                            || entity.getRainDaily() == rainDaily
-                                            || entity.getPressure() == pressure
-                                            || entity.getHumidity() == humidity
-                                            || entity.getUvRadiationIndex() == uvRadiationIndex) { 
+                                    if (Objects.equals(entity.getTemperature(), temperature)
+                                            || Objects.equals(entity.getWindSpeed(), windSpeed)
+                                            || Objects.equals(entity.getWindMax(), windMax)
+                                            || Objects.equals(entity.getWindDirection(), windDirection)
+                                            || Objects.equals(entity.getRainRate(), rainRate)
+                                            || Objects.equals(entity.getRainDaily(), rainDaily)
+                                            || Objects.equals(entity.getPressure(), pressure)
+                                            || Objects.equals(entity.getHumidity(), humidity)
+                                            || Objects.equals(entity.getUvRadiationIndex(), uvRadiationIndex)) { 
                                         log.trace("Ignore Duplicate : {} - {} - {}", station, date, category);
                                         duplicates++;
                                     }

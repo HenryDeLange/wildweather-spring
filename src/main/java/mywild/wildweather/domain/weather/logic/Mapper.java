@@ -26,8 +26,7 @@ final public class Mapper {
             Set<WeatherField> weatherFields,
             List<WeatherEntity> entities) {
         var calcAverage = aggregate == null || aggregate == WeatherAggregate.AVERAGE;
-        Map<String, Integer> daysPerGroup = new HashMap<>();
-        Map<String, Integer> daysWithDataPerGroup = new HashMap<>();
+        Map<String, Integer> daysWithDataPerGroupAndField = new HashMap<>();
         var weatherData = new WeatherDataDto();
         for (var weatherDay : entities) {
             var station = weatherDay.getStation();
@@ -41,17 +40,11 @@ final public class Mapper {
             var groupMap = weatherData.getWeather().computeIfAbsent(station, _ -> new LinkedHashMap<>())
                         .computeIfAbsent(year, _ -> new LinkedHashMap<>())
                             .computeIfAbsent(group, _ -> new LinkedHashMap<>());
-            if (category == WeatherCategory.A) {
-                daysPerGroup.merge(getDaysPerGroupKey(station, year, group), 1, Integer::sum);
-                if (weatherDay.getMissing() < 100) {
-                    daysWithDataPerGroup.merge(getDaysPerGroupKey(station, year, group), 1, Integer::sum);
-                }
-            }
             WeatherFieldExtractor.EXTRACTORS.forEach((field, extractor) -> {
                 if (weatherFields == null || weatherFields.isEmpty() || weatherFields.contains(field)) {
                     var fieldMap = groupMap.computeIfAbsent(field.getKey(), _ -> new LinkedHashMap<>());
                     var value = extractor.apply(weatherDay);
-                    if (value != null && (weatherDay.getMissing() < 100 || field == WeatherField.MISSING)) {
+                    if ((value != null && weatherDay.getMissing() < 100) || field == WeatherField.MISSING) {
                         if (category == WeatherCategory.H) {
                             fieldMap.merge(category, value, calcAverage ? Math::max : Double::sum);
                         }
@@ -60,6 +53,7 @@ final public class Mapper {
                         }
                         else {
                             fieldMap.merge(category, value, Double::sum);
+                            daysWithDataPerGroupAndField.merge(getDaysPerGroupAndFieldKey(station, year, group, field), 1, Integer::sum);
                         }
                     }
                     else {
@@ -75,13 +69,9 @@ final public class Mapper {
                         categoryMap.replaceAll((category, total) -> {
                             if (total != null) {
                                 if (calcAverage && category == WeatherCategory.A) {
-                                    Integer days;
-                                    if (WeatherField.fromKey(field) == WeatherField.MISSING) {
-                                        days = daysPerGroup.getOrDefault(getDaysPerGroupKey(station, year, group), 1);
-                                    }
-                                    else {
-                                        days = daysWithDataPerGroup.getOrDefault(getDaysPerGroupKey(station, year, group), 1);
-                                    }
+                                    var weatherField = WeatherField.fromKey(field);
+                                    var key = getDaysPerGroupAndFieldKey(station, year, group, weatherField);
+                                    var days = daysWithDataPerGroupAndField.getOrDefault(key, 1);
                                     return Conversions.roundToOneDecimal(total / (double) days);
                                 }
                                 else {
@@ -99,9 +89,8 @@ final public class Mapper {
         return weatherData;
     }
 
-    private static String getDaysPerGroupKey(String station, int year, String group) {
-        String daysPerGroupKey = station + "-" + year + "-" + group;
-        return daysPerGroupKey;
+    private static String getDaysPerGroupAndFieldKey(String station, int year, String group, WeatherField field) {
+        return station + "-" + year + "-" + group + "-" + field;
     }
     
 }
