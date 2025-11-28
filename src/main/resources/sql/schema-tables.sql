@@ -13,15 +13,15 @@ CREATE TABLE IF NOT EXISTS "weather" (
     station VARCHAR(64) NOT NULL,           -- The station's name
     date DATE NOT NULL,                     -- CSV Column: Date
     category VARCHAR(1) NOT NULL,           -- Unnamed first column with values: Low, Average, High
-    temperature DECFLOAT NOT NULL,          -- CSV Column: Outdoor Temperature (°C)
-    wind_speed DECFLOAT NOT NULL,           -- CSV Column: Wind Speed (km/hr)
-    wind_max DECFLOAT NOT NULL,             -- CSV Column: Max Daily Gust (km/hr)
-    wind_direction VARCHAR(3) NOT NULL,     -- CSV Column: Wind Direction (°)
-    rain_rate DECFLOAT NOT NULL,            -- CSV Column: Rain Rate (mm/hr) / Column: Hourly Rain (mm/hr)
-    rain_daily DECFLOAT NOT NULL,           -- CSV Column: Daily Rain (mm)
-    pressure DECFLOAT NOT NULL,             -- CSV Column: Relative Pressure (hPa)
-    humidity DECFLOAT NOT NULL,             -- CSV Column: Humidity (%)
-    uv_radiation_index DECFLOAT NOT NULL,   -- CSV Column: Ultra-Violet Radiation Index
+    temperature DECFLOAT,                   -- CSV Column: Outdoor Temperature (°C)
+    wind_speed DECFLOAT,                    -- CSV Column: Wind Speed (km/hr)
+    wind_max DECFLOAT,                      -- CSV Column: Max Daily Gust (km/hr)
+    wind_direction VARCHAR(3),              -- CSV Column: Wind Direction (°)
+    rain_rate DECFLOAT,                     -- CSV Column: Rain Rate (mm/hr) / Column: Hourly Rain (mm/hr)
+    rain_daily DECFLOAT,                    -- CSV Column: Daily Rain (mm)
+    pressure DECFLOAT,                      -- CSV Column: Relative Pressure (hPa)
+    humidity DECFLOAT,                      -- CSV Column: Humidity (%)
+    uv_radiation_index DECFLOAT,            -- CSV Column: Ultra-Violet Radiation Index
     missing DECFLOAT NOT NULL,              -- The percentage of records missing during the day
     UNIQUE (date, station, category)
 );

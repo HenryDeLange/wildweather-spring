@@ -83,5 +83,8 @@ mywild:
     ambient-weather:
         app-key: ${AMBIENT_WEATHER_APP_KEY}
         api-key: ${AMBIENT_WEATHER_API_KEY}
+    weather-underground:
+        api-key: ${WEATHER_UNDERGROUND_API_KEY}
     csv:
         folder: ./
+    my-stations: AW Andante, AW Corgi Corner

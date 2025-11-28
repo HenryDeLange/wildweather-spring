@@ -4,6 +4,9 @@
     <Package name="~mywild\.ambientweather\.openapi(\..*)?" />
   </Match>
   <Match>
+    <Package name="~mywild\.weatherunderground\.openapi(\..*)?" />
+  </Match>
+  <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
     <Class name="mywild.wildweather.framework.swagger.OpenApiYamlWriter" />
     <Method name="onWebServerReady" />
@@ -19,12 +22,22 @@
   </Match>
   <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler" />
     <Method name="processApiData" />
   </Match>
   <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherApiScheduler" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler" />
+    <Method name="processApiData" />
+  </Match>
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler" />
+    <Method name="processApiData" />
+  </Match>
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler" />
     <Method name="processApiData" />
   </Match>
   <Match>

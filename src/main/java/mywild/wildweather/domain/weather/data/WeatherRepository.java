@@ -23,8 +23,8 @@ public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
         SELECT *
         FROM "weather" w
         WHERE
-            (:category IS NULL OR w.category = :category)
-            AND (:station IS NULL OR w.station = :station)
+            ((:stations) IS NULL OR w.station IN (:stations))
+            AND (:category IS NULL OR w.category = :category)
             AND (:startDate IS NULL OR w.date >= :startDate)
             AND (:endDate IS NULL OR w.date <= :endDate)
             AND (:startMonth IS NULL OR MONTH(w.date) >= :startMonth)
@@ -32,8 +32,8 @@ public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
         ORDER BY w.date ASC, w.station ASC, w.category ASC
         """)
     List<WeatherEntity> searchWeather(
+        @Param("stations") List<String> stations,
         @Param("category") WeatherCategory category,
-        @Param("station") String station,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,
         @Param("startMonth") Integer startMonth,
@@ -59,6 +59,16 @@ public interface WeatherRepository extends CrudRepository<WeatherEntity, Long> {
         LIMIT 1
         """)
     LocalDate findTopDateByStation(
+        @Param("station") String station);
+    
+    @Query("""
+        SELECT w.date
+        FROM \"weather\" w
+        WHERE (:station IS NULL OR w.station = :station)
+        ORDER BY date ASC
+        LIMIT 1
+        """)
+    LocalDate findBottomDateByStation(
         @Param("station") String station);
 
 }

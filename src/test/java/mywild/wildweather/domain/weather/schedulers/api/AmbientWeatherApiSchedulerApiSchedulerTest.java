@@ -12,13 +12,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
-public class WeatherApiSchedulerTest {
+public class AmbientWeatherApiSchedulerApiSchedulerTest {
 
 	@Test
 	void testIsRunningReflectsIS_RUNNINGFlag() throws Exception {
-		WeatherApiScheduler scheduler = new WeatherApiScheduler();
+		AmbientWeatherApiScheduler scheduler = new AmbientWeatherApiScheduler();
 
-		Field f = WeatherApiScheduler.class.getDeclaredField("IS_RUNNING");
+		Field f = AmbientWeatherApiScheduler.class.getDeclaredField("IS_RUNNING");
 		f.setAccessible(true);
 		AtomicBoolean flag = (AtomicBoolean) f.get(null);
 
@@ -34,13 +34,13 @@ public class WeatherApiSchedulerTest {
 
 	@Test
 	void testProcessValueUpdatesMaps() throws Exception {
-		WeatherApiScheduler scheduler = new WeatherApiScheduler();
+		AmbientWeatherApiScheduler scheduler = new AmbientWeatherApiScheduler();
 
 		Map<Integer, Double> low = new HashMap<>();
 		Map<Integer, Double> high = new HashMap<>();
 		Map<Integer, List<Double>> average = new HashMap<>();
 
-		Method m = WeatherApiScheduler.class.getDeclaredMethod("processValue", Map.class, Map.class, Map.class,
+		Method m = AmbientWeatherApiScheduler.class.getDeclaredMethod("processValue", Map.class, Map.class, Map.class,
 				int.class, double.class);
 		m.setAccessible(true);
 
@@ -59,7 +59,7 @@ public class WeatherApiSchedulerTest {
 
 	@Test
 	void testGetCalculatedAverageRoundsAndHandlesEmpty() throws Exception {
-		WeatherApiScheduler scheduler = new WeatherApiScheduler();
+		AmbientWeatherApiScheduler scheduler = new AmbientWeatherApiScheduler();
 
 		Map<Integer, List<Double>> average = new HashMap<>();
 		List<Double> values = new ArrayList<>();
@@ -67,7 +67,7 @@ public class WeatherApiSchedulerTest {
 		values.add(2.22);
 		average.put(0, values);
 
-		Method m = WeatherApiScheduler.class.getDeclaredMethod("getCalculatedAverage", Map.class);
+		Method m = AmbientWeatherApiScheduler.class.getDeclaredMethod("getCalculatedAverage", Map.class);
 		m.setAccessible(true);
 
 		@SuppressWarnings("unchecked")

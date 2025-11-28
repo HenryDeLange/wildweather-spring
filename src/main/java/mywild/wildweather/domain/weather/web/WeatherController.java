@@ -16,7 +16,7 @@ import mywild.wildweather.domain.weather.web.dto.WeatherAggregate;
 import mywild.wildweather.domain.weather.web.dto.WeatherDataDto;
 import mywild.wildweather.domain.weather.web.dto.WeatherField;
 import mywild.wildweather.domain.weather.web.dto.WeatherGrouping;
-import mywild.wildweather.domain.weather.web.dto.WeatherStatusDto;
+import mywild.wildweather.domain.weather.web.dto.WeatherStationDto;
 import mywild.wildweather.framework.error.BadRequestException;
 import mywild.wildweather.framework.web.BaseController;
 
@@ -30,7 +30,7 @@ public class WeatherController extends BaseController {
     @Operation(summary = "Returns all weather data, for the optional filter criteria.")
     @GetMapping("/weather")
     public WeatherDataDto getWeather(
-            @RequestParam(required = false) String station,
+            @RequestParam(required = false) List<String> stations,
             @RequestParam(required = false) WeatherGrouping grouping,
             @RequestParam(required = false) WeatherCategory category,
             @RequestParam(required = false) WeatherAggregate aggregate,
@@ -42,10 +42,10 @@ public class WeatherController extends BaseController {
         if ((startMonth != null && (startMonth < 1 || startMonth > 12))
                 || (endMonth != null && (endMonth < 1 || endMonth > 12))
                 || (startMonth != null && endMonth != null && startMonth > endMonth)) {
-            throw new BadRequestException(station);
+            throw new BadRequestException("weather.invalid-request-parameters");
         }
         return service.getWeather(
-            station, grouping, category, aggregate, weatherFields, 
+            stations, grouping, category, aggregate, weatherFields, 
             startDate, endDate, startMonth, endMonth);
     }
 
@@ -56,8 +56,8 @@ public class WeatherController extends BaseController {
     }
 
     @Operation(summary = "Returns the status information for all weather stations.")
-    @GetMapping("/weather/status")
-    public List<WeatherStatusDto> getWeatherStatus() {
+    @GetMapping("/weather/stations/details")
+    public List<WeatherStationDto> getWeatherStatus() {
         return service.getWeatherStatus();
     }
 

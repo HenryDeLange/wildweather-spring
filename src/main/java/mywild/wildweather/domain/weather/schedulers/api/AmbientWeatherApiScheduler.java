@@ -26,16 +26,17 @@ import mywild.wildweather.domain.weather.data.WeatherRepository;
 import mywild.wildweather.domain.weather.schedulers.Utils;
 
 /**
+ * https://ambientweather.net/account/keys
  * https://ambientweather.docs.apiary.io/
  * https://github.com/ambient-weather/api-docs/wiki/Device-Data-Specs
  */
 
 @Slf4j
 @Service
-public class WeatherApiScheduler {
+public class AmbientWeatherApiScheduler {
 
-    private static final int SCHEDULE_DELAY = 5 * 60 * 1000; // 5 minutes
-    private static final int SCHEDULE_RATE = 1 * 60 * 60 * 1000; // 1 hours
+    public static final String AW_CSV_PREFIX = "api-ambient-weather";
+
     private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // 288 (Every 5 minutes)
 
     private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
@@ -49,7 +50,7 @@ public class WeatherApiScheduler {
     @Autowired
     private WeatherRepository repo;
 
-    @Scheduled(initialDelay = SCHEDULE_DELAY, fixedRate = SCHEDULE_RATE)
+    @Scheduled(cron = "0 0 2 * * *") // Run at 2AM
     void scheduledApiProcessing() {
         processApiData();
     }
@@ -58,19 +59,20 @@ public class WeatherApiScheduler {
         return IS_RUNNING.get();
     }
 
+    @SuppressWarnings("null")
     @Async
     public void processApiData() {
         if (!IS_RUNNING.compareAndSet(false, true)) {
-            log.warn("Already busy processing api data... The new request will be ignored.");
+            log.warn("Already busy processing Ambient Weather API data... The new request will be ignored.");
             return;
         }
         try (Stream<Path> paths = Files.walk(Paths.get(csvRootFolder))) {
-            log.info("*************************");
-            log.info("Fetching API data");
-            log.info("*************************");
+            log.info("****************************************");
+            log.info("Fetching Ambient Weather API data");
+            log.info("****************************************");
             List<Path> macAddressFiles = paths
                 .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith("macAddress.txt"))
+                .filter(path -> path.toString().endsWith(AW_CSV_PREFIX + "-mac-address.txt"))
                 .toList();
             for (var macAddressPath : macAddressFiles) {
                 var station = Utils.getStationName(macAddressPath);
@@ -80,10 +82,11 @@ public class WeatherApiScheduler {
                 try (var reader = Files.newBufferedReader(macAddressPath)) {
                     var stationMacAddress = reader.readLine();
                     log.info("----------------");
-                    log.info("Processing API : {}", station);
+                    log.info("Processing Ambient Weather API : {}", station);
                     OffsetDateTime apiEndDate = LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC).minusSeconds(1); // Yesterday midnight
                     do {
-                        var summaryCsvPath = CsvWriter.getCsvPath(macAddressPath.getParent(), apiEndDate.toLocalDateTime());
+                        var summaryCsvPath = CsvWriter.getCsvPath(AW_CSV_PREFIX,
+                            macAddressPath.getParent(), apiEndDate.toLocalDate(), null);
                         if (summaryCsvPath != null && !Files.exists(summaryCsvPath)) {
                             // Fetch the API data
                             log.info("   Fetching data for : {}", apiEndDate.toLocalDate());
@@ -93,7 +96,8 @@ public class WeatherApiScheduler {
                             Map<Integer, Double> high = new LinkedHashMap<>();
                             Map<Integer, List<Double>> average = new LinkedHashMap<>();
                             for (var dataRecord : data) {
-                                if (dataRecord.getDate().toLocalDate().equals(apiEndDate.toLocalDate())) {
+                                var recordDate = dataRecord.getDate().toLocalDate();
+                                if (recordDate.equals(apiEndDate.toLocalDate())) {
                                     processValue(low, high, average, 0, Conversions.fahToCel(dataRecord.getTempf()));
                                     processValue(low, high, average, 1, Conversions.mphToKmh(dataRecord.getWindspeedmph()));
                                     processValue(low, high, average, 2, Conversions.mphToKmh(dataRecord.getWindgustmph()));
@@ -107,18 +111,20 @@ public class WeatherApiScheduler {
                                 }
                                 else {
                                     log.debug("   Not processing records for date {} while busy processing {}",
-                                        dataRecord.getDate().toLocalDate(), apiEndDate.toLocalDate());
+                                        recordDate, apiEndDate.toLocalDate());
                                     break;
                                 }
                             }
                             // Save the record to a CSV file
-                            Map<Integer, Double> calculatedAverage = getCalculatedAverage(average);
-                            CsvWriter.writeCsvFile(
-                                summaryCsvPath, 
-                                apiEndDate.toLocalDate(),
-                                new ArrayList<>(calculatedAverage.values()),
-                                new ArrayList<>(high.values()),
-                                new ArrayList<>(low.values()));
+                            if (readRecords >= 1) {
+                                Map<Integer, Double> calculatedAverage = getCalculatedAverage(average);
+                                CsvWriter.writeSingleDayCsvFile(
+                                    summaryCsvPath, 
+                                    apiEndDate.toLocalDate(),
+                                    new ArrayList<>(calculatedAverage.values()),
+                                    new ArrayList<>(high.values()),
+                                    new ArrayList<>(low.values()));
+                            }
                             processedDays++;
                             // Sleep for 2 seconds to comply with API guidelines (of 1 request per second)
                             Thread.sleep(Duration.ofSeconds(2));
@@ -146,9 +152,9 @@ public class WeatherApiScheduler {
             log.error(ex.getMessage(), ex);
         }
         finally {
-            log.info("****************************");
-            log.info("Processed all API data");
-            log.info("****************************");
+            log.info("****************************************");
+            log.info("Processed all Ambient Weather API data");
+            log.info("****************************************");
             IS_RUNNING.set(false);
         }
     }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.atLeast;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,7 +44,7 @@ public class ProcessSummaryFilesTest {
 
         assertTrue(fine.isEmpty());
 
-        verify(mockRepo).save(org.mockito.ArgumentMatchers.any());
+        verify(mockRepo, atLeast(1)).save(org.mockito.ArgumentMatchers.any());
     }
 
 }

@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +26,7 @@ import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
 import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
 import mywild.wildweather.domain.weather.schedulers.SchedulerThreadFactory;
 import mywild.wildweather.domain.weather.schedulers.Utils;
+import mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler;
 
 @Slf4j
 @Component
@@ -33,8 +35,8 @@ public class ProcessSummaryFiles {
     private static final Object DATABASE_LOCK = new Object();
 
     private static final List<String> KNOWN_BAD_FILES = List.of(
-        "Andante -> ambient-weather-high-lows-details-20241003-20251002.csv",
-        "Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv"
+        "AW Andante -> ambient-weather-high-lows-details-20241003-20251002.csv",
+        "AW Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv"
     );
 
     @Autowired
@@ -49,18 +51,29 @@ public class ProcessSummaryFiles {
             .toList();
         List<Path> fineScaleCsvFiles = Collections.synchronizedList(new ArrayList<>());
         List<Callable<Void>> tasks = new ArrayList<>();
-        csvFiles.forEach(csvFile -> {
-            tasks.add(() -> {
-                var isSummaryFile = processSummaryFile(csvFile);
-                if (!isSummaryFile) {
-                    fineScaleCsvFiles.add(csvFile);
-                }
-                return null;
-            });
+        csvFiles.stream()
+            .filter(path -> !path.toString().toLowerCase(Locale.ROOT).contains("api-weather-underground"))
+            .forEach(csvFile -> {
+                tasks.add(() -> {
+                    var isSummaryFile = processSummaryFile(csvFile);
+                    if (!isSummaryFile) {
+                        fineScaleCsvFiles.add(csvFile);
+                    }
+                    return null;
+                });
         });
         ExecutorService executor = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors(),
             new SchedulerThreadFactory("s-csv-"));
+        executor.invokeAll(tasks);
+        csvFiles.stream()
+            .filter(path -> path.toString().toLowerCase(Locale.ROOT).contains(WeatherUndergroundApiScheduler.WU_CSV_PREFIX))
+            .forEach(csvFile -> {
+                tasks.add(() -> {
+                    processSummaryFile(csvFile);
+                    return null;
+                });
+        });
         executor.invokeAll(tasks);
         executor.shutdown();
         return fineScaleCsvFiles;
@@ -75,7 +88,7 @@ public class ProcessSummaryFiles {
         var duplicates = 0;
         var warnings = 0;
         var errors = 0;
-        var missing = (csvName.contains("estimates-") || csvName.contains("api-")) ? 99.99 : 0;
+        var missing = csvName.contains("estimates-") ? 99.99 : 0;
         try (var reader = Files.newBufferedReader(csvFile)) {
             String[] headers = CsvUtils.getHeaders(reader);
             var isSummaryCsv = headers[0].equals("COL0");
@@ -88,15 +101,15 @@ public class ProcessSummaryFiles {
                             var category = WeatherCategory.valueOf(categoryRecord.substring(0, 1));
                             var date = LocalDate.parse(record.get("Date"));
                             var station = Utils.getStationName(csvFile);
-                            var temperature = Double.parseDouble(record.get("Outdoor Temperature"));
-                            var windSpeed = Double.parseDouble(record.get("Wind Speed"));
-                            var windMax = Double.parseDouble(record.get("Max Daily Gust"));
-                            var windDirection = record.get("Wind Direction");
-                            var rainRate = Double.parseDouble(record.get("Rain Rate"));
-                            var rainDaily = Double.parseDouble(record.get("Daily Rain"));
-                            var pressure = Double.parseDouble(record.get("Relative Pressure"));
-                            var humidity = Double.parseDouble(record.get("Humidity"));
-                            var uvRadiationIndex = Double.parseDouble(record.get("Ultra-Violet Radiation Index"));
+                            var temperature = getDoubleValue(record.get("Outdoor Temperature"));
+                            var windSpeed = getDoubleValue(record.get("Wind Speed"));
+                            var windMax = getDoubleValue(record.get("Max Daily Gust"));
+                            var windDirection = getStringValue(record.get("Wind Direction"));
+                            var rainRate = getDoubleValue(record.get("Rain Rate"));
+                            var rainDaily = getDoubleValue(record.get("Daily Rain"));
+                            var pressure = getDoubleValue(record.get("Relative Pressure"));
+                            var humidity = getDoubleValue(record.get("Humidity"));
+                            var uvRadiationIndex = getDoubleValue(record.get("Ultra-Violet Radiation Index"));
                             // TODO: Maybe better to build a map in memory and then save the map once-off after all the tasks are done
                             synchronized (DATABASE_LOCK) {
                                 var entity = repo.findByDateAndStationAndCategory(date, station, category);
@@ -121,22 +134,24 @@ public class ProcessSummaryFiles {
                                     newRecords++;
                                 }
                                 else {
-                                    if (entity.getTemperature() == temperature
-                                            || entity.getWindSpeed() == windSpeed
-                                            || entity.getWindMax() == windMax
-                                            || entity.getWindDirection().equals(windDirection)
-                                            || entity.getRainRate() == rainRate
-                                            || entity.getRainDaily() == rainDaily
-                                            || entity.getPressure() == pressure
-                                            || entity.getHumidity() == humidity
-                                            || entity.getUvRadiationIndex() == uvRadiationIndex) { 
+                                    if (Objects.equals(entity.getTemperature(), temperature)
+                                            || Objects.equals(entity.getWindSpeed(), windSpeed)
+                                            || Objects.equals(entity.getWindMax(), windMax)
+                                            || Objects.equals(entity.getWindDirection(), windDirection)
+                                            || Objects.equals(entity.getRainRate(), rainRate)
+                                            || Objects.equals(entity.getRainDaily(), rainDaily)
+                                            || Objects.equals(entity.getPressure(), pressure)
+                                            || Objects.equals(entity.getHumidity(), humidity)
+                                            || Objects.equals(entity.getUvRadiationIndex(), uvRadiationIndex)) { 
                                         log.trace("Ignore Duplicate : {} - {} - {}", station, date, category);
                                         duplicates++;
                                     }
                                     else {
-                                        logBuilder.append("Inconsistent Duplicate!").append(System.lineSeparator());
-                                        logBuilder.append(MessageFormatter.format("   Entity : {}", entity).getMessage()).append(System.lineSeparator());
-                                        logBuilder.append(MessageFormatter.format("   Record : {}", record).getMessage()).append(System.lineSeparator());
+                                        if (!csvName.contains("api-weather-underground")) { // Don't log for weather underground files
+                                            logBuilder.append("Inconsistent Duplicate!").append(System.lineSeparator());
+                                            logBuilder.append(MessageFormatter.format("   Entity : {}", entity).getMessage()).append(System.lineSeparator());
+                                            logBuilder.append(MessageFormatter.format("   Record : {}", record).getMessage()).append(System.lineSeparator());   
+                                        }
                                         warnings++;
                                     }
                                 }
@@ -144,7 +159,7 @@ public class ProcessSummaryFiles {
                         }
                     }
                     catch (NumberFormatException ex) {
-                        if (KNOWN_BAD_FILES.contains(csvName)) {
+                        if (KNOWN_BAD_FILES.contains(csvName) || csvName.contains("api-weather-underground")) {
                             log.debug("Could not process record due to (known) number format error.");
                             log.debug("   CSV File : {}", csvName);
                             log.trace("   Headers  : {}", Arrays.toString(headers));
@@ -187,6 +202,20 @@ public class ProcessSummaryFiles {
         log.info(logBuilder.toString());
         WeatherCsvScheduler.markFileAsProcessed(csvName);
         return true;
+    }
+
+    private Double getDoubleValue(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return Double.valueOf(value);
+    }
+
+    private String getStringValue(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 
 }

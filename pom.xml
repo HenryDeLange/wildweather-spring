@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.7</version>
+        <version>3.5.8</version>
         <relativePath />
     </parent>
 
@@ -152,6 +152,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
@@ -174,6 +175,7 @@
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>
                 <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>9.0.2</version>
                 <executions>
                     <execution>
                         <id>get-the-git-infos</id>
@@ -194,6 +196,7 @@
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>7.14.0</version>
                 <executions>
+                    <!-- Ambient Weather API client -->
                     <execution>
                         <id>1-generate-api-client</id>
                         <phase>generate-sources</phase>
@@ -219,11 +222,74 @@
                                 <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
                                 <useEnumCaseInsensitive>true</useEnumCaseInsensitive>
                                 <useRuntimeException>true</useRuntimeException>
+                                <useGzipFeature>true</useGzipFeature>
                             </configOptions>
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
                         </configuration>
                     </execution>
+                    <!-- Weather Underground API client -->
+                    <execution>
+                        <id>2-generate-api-client</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generatorName>java</generatorName>
+                            <library>okhttp-gson</library>
+                            <inputSpec>${project.basedir}/src/main/openapi/weather-underground-api.yml</inputSpec>
+                            <apiPackage>mywild.weatherunderground.openapi.client.api</apiPackage>
+                            <modelPackage>mywild.weatherunderground.openapi.client.model</modelPackage>
+                            <configOptions>
+                                <dateLibrary>java8</dateLibrary>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                <useJakartaEe>true</useJakartaEe>
+                                <useBeanValidation>true</useBeanValidation>
+                                <useRecords>true</useRecords>
+                                <openApiNullable>false</openApiNullable>
+                                <containerDefaultToNull>true</containerDefaultToNull>
+                                <generateBuilders>true</generateBuilders>
+                                <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
+                                <useEnumCaseInsensitive>true</useEnumCaseInsensitive>
+                                <useRuntimeException>true</useRuntimeException>
+                                <useGzipFeature>true</useGzipFeature>
+                            </configOptions>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                        </configuration>
+                    </execution>
+                    <!-- ClimateSERV Chirps API client -->
+                    <!-- <execution>
+                        <id>3-generate-api-client</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generatorName>java</generatorName>
+                            <library>okhttp-gson</library>
+                            <inputSpec>${project.basedir}/src/main/openapi/climateserv-chirps-api.yml</inputSpec>
+                            <apiPackage>mywild.climateservchirps.openapi.client.api</apiPackage>
+                            <modelPackage>mywild.climateservchirps.openapi.client.model</modelPackage>
+                            <configOptions>
+                                <dateLibrary>java8</dateLibrary>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                <useJakartaEe>true</useJakartaEe>
+                                <useBeanValidation>true</useBeanValidation>
+                                <useRecords>true</useRecords>
+                                <openApiNullable>false</openApiNullable>
+                                <containerDefaultToNull>true</containerDefaultToNull>
+                                <generateBuilders>true</generateBuilders>
+                                <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
+                                <useEnumCaseInsensitive>true</useEnumCaseInsensitive>
+                                <useRuntimeException>true</useRuntimeException>
+                                <useGzipFeature>true</useGzipFeature>
+                            </configOptions>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                        </configuration>
+                    </execution> -->
                 </executions>
             </plugin>
         </plugins>
@@ -315,6 +381,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.14</version>
                         <executions>
                             <execution>
                                 <goals>
@@ -361,8 +428,14 @@
                         </configuration>
                     </plugin>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>3.5.4</version>
+                    </plugin>
+                    <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.14</version>
                     </plugin>
                 </plugins>
             </reporting>

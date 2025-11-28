@@ -10,6 +10,7 @@
         "gson",
         "gsonfire",
         "HenryDeLange",
+        "ICANON4",
         "jacoco",
         "jdbc",
         "liberica",
@@ -28,6 +29,8 @@
         "springdoc",
         "springframework",
         "topk",
+        "varnames",
+        "weatherunderground",
         "webmvc",
         "whitelabel",
         "WildWeather"

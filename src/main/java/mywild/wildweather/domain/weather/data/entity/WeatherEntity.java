@@ -31,24 +31,23 @@ public class WeatherEntity extends BaseEntity {
     @NotNull
     private WeatherCategory category;
 
-    private double temperature;
+    private Double temperature;
 
-    private double windSpeed;
+    private Double windSpeed;
 
-    private double windMax;
+    private Double windMax;
 
-    @NotNull
     private String windDirection;
 
-    private double rainRate;
+    private Double rainRate;
 
-    private double rainDaily;
+    private Double rainDaily;
 
-    private double pressure;
+    private Double pressure;
 
-    private double humidity;
+    private Double humidity;
 
-    private double uvRadiationIndex;
+    private Double uvRadiationIndex;
 
     private double missing;
 

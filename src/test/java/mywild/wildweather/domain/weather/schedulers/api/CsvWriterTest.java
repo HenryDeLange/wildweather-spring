@@ -15,8 +15,8 @@ public class CsvWriterTest {
     void writeCsvFileCreatesSummaryWithExpectedRows() throws Exception {
         Path parent = Files.createTempDirectory("csv-writer-parent-");
 
-        LocalDateTime dateTime = LocalDateTime.of(2025, 11, 7, 0, 0);
-        Path csvPath = CsvWriter.getCsvPath(parent, dateTime);
+        LocalDate dateTime = LocalDate.of(2025, 11, 7);
+        Path csvPath = CsvWriter.getCsvPath("test", parent, dateTime, null);
 
         List<Double> averages = Arrays.asList(12.3, 5.0, 8.1, 90.0, 0.2, 1.0, 1013.2, 55.0, 0.0);
         List<Double> highs = Arrays.asList(14.0, 7.0, 9.0, 95.0, 0.5, 2.0, 1015.0, 60.0, 0.0);
@@ -26,7 +26,7 @@ public class CsvWriterTest {
             Files.delete(csvPath);
         }
 
-        CsvWriter.writeCsvFile(csvPath, LocalDate.of(2025, 11, 7), averages, highs, lows);
+        CsvWriter.writeSingleDayCsvFile(csvPath, LocalDate.of(2025, 11, 7), averages, highs, lows);
 
         List<String> lines = Files.readAllLines(csvPath, StandardCharsets.UTF_8);
         assertEquals(true, lines.size() >= 4);
