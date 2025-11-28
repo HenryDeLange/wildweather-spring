@@ -35,8 +35,8 @@ public class ProcessSummaryFiles {
     private static final Object DATABASE_LOCK = new Object();
 
     private static final List<String> KNOWN_BAD_FILES = List.of(
-        "Andante -> ambient-weather-high-lows-details-20241003-20251002.csv",
-        "Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv"
+        "AW Andante -> ambient-weather-high-lows-details-20241003-20251002.csv",
+        "AW Corgi Corner -> ambient-weather-high-lows-details-20241003-20251002.csv"
     );
 
     @Autowired
