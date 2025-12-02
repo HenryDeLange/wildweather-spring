@@ -27,7 +27,10 @@ public class AdminService {
 
     public void triggerCsvProcessing(boolean forceFullReload) {
         if (forceFullReload) {
-            csvScheduler.resetProcessedCsvFiles();
+            csvScheduler.resetAllProcessedCsvFiles();
+        }
+        else {
+            csvScheduler.resetLatestWeatherUndergroundProcessedCsvFiles();
         }
         csvScheduler.processCsvFiles();
     }

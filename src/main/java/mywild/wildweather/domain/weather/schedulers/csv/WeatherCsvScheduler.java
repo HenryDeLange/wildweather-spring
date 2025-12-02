@@ -4,17 +4,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
+import mywild.wildweather.domain.weather.schedulers.api.CsvWriter;
+import mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler;
 
 @Slf4j
 @Service
@@ -38,9 +43,15 @@ public class WeatherCsvScheduler {
 
     @Autowired
     private ProcessFullFiles processFullFiles;
+
+    @EventListener(ApplicationReadyEvent.class)
+    void startupCsvFilesProcessing() {
+        processCsvFiles();
+    }
     
-    @Scheduled(initialDelay = SCHEDULE_DELAY, fixedRate = SCHEDULE_RATE)
+    @Scheduled(cron = "0 0 4 * * *") // Run at 4AM
     void scheduledCsvFilesProcessing() {
+        resetLatestWeatherUndergroundProcessedCsvFiles();
         processCsvFiles();
     }
 
@@ -48,7 +59,19 @@ public class WeatherCsvScheduler {
         return IS_RUNNING.get();
     }
 
-    public void resetProcessedCsvFiles() {
+    public void resetLatestWeatherUndergroundProcessedCsvFiles() {
+        log.info("Clearing latest two months of Weather Underground data...");
+        var currentMonth = LocalDate.now().withDayOfMonth(1);
+        PROCESSED_CSV_FILES.clear();
+        PROCESSED_CSV_FILES.addAll(PROCESSED_CSV_FILES.stream()
+            .filter(csv -> !csv.contains(WeatherUndergroundApiScheduler.WU_CSV_PREFIX)
+                        || !csv.contains(currentMonth.format(CsvWriter.CSV_NAME_DATE_FORMAT))
+                        && !csv.contains(currentMonth.minusMonths(1).format(CsvWriter.CSV_NAME_DATE_FORMAT)))
+            .toList());
+    }
+
+    public void resetAllProcessedCsvFiles() {
+        log.info("Clearing existing weather data...");
         repo.deleteAll();
         PROCESSED_CSV_FILES.clear();
     }

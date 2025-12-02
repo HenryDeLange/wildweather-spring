@@ -130,7 +130,7 @@ public class WeatherCsvSchedulerTest {
         fRepo.set(scheduler, mockRepo);
 
         WeatherCsvScheduler.markFileAsProcessed("test.csv");
-        scheduler.resetProcessedCsvFiles();
+        scheduler.resetAllProcessedCsvFiles();
 
         verify(mockRepo).deleteAll();
         assertFalse(WeatherCsvScheduler.hasFileBeenProcessed("test.csv"));

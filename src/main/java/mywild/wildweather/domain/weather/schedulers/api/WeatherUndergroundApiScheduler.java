@@ -64,6 +64,9 @@ public class WeatherUndergroundApiScheduler {
         return IS_RUNNING.get();
     }
 
+    // TODO: The daily endpoint seems to frequently have blank days even when the station was on during that day,
+    //       maybe consider switching to the hourly endpoint instead?
+
     @SuppressWarnings("null")
     @Async
     public void processApiData(boolean fetchAllData) {
@@ -106,12 +109,13 @@ public class WeatherUndergroundApiScheduler {
                             stationIdPath.getParent(), apiStarDate, apiEndDate.with(TemporalAdjusters.lastDayOfMonth()));
                         // Only generate files for observation months that are new, or for the current month
                         if (fetchAllData
-                                || apiEndDate.equals(currentDate.minusDays(1))
+                                || apiStarDate.equals(currentDate.withDayOfMonth(1))
+                                || apiStarDate.equals(currentDate.minusMonths(1).withDayOfMonth(1))
                                 || (summaryCsvPath != null && !Files.exists(summaryCsvPath))) {
                             // Fetch the API data
                             log.info("   Fetching data for {} : {} to {}", stationId, apiStarDate.format(API_DATE_FORMAT), apiEndDate.format(API_DATE_FORMAT));
                             // Example URL:
-                            // https://api.weather.com/v2/pws/history/daily?startDate=20250101&endDate=20250131&format=json&units=m&numericPrecision=decimal&stationId=<STATION>&apiKey=<APIKEY>
+                            // https://api.weather.com/v2/pws/history/daily?startDate=20250101&endDate=20250131&format=json&units=m&numericPrecision=decimal&stationId=__STATION__&apiKey=__APIKEY__
                             var httpData = api.getDailyWithHttpInfo(stationId, FormatEnum.JSON, UnitsEnum.METRIC, 
                                 null, apiStarDate.format(API_DATE_FORMAT), apiEndDate.format(API_DATE_FORMAT),
                                 NumericPrecisionEnum.DECIMAL);
@@ -200,7 +204,8 @@ public class WeatherUndergroundApiScheduler {
                     while (
                         (consecutiveEmptyResponses < STOP_AT_EMPTY_RESPONSES)
                         && (fetchAllData || mostRecentDatabaseDate == null
-                            || mostRecentDatabaseDate.withDayOfMonth(1).isBefore(apiStarDate))
+                            || mostRecentDatabaseDate.withDayOfMonth(1).minusMonths(1).isBefore(apiStarDate)
+                            || mostRecentDatabaseDate.withDayOfMonth(1).minusMonths(1).equals(apiStarDate))
                     );
                 }
                 catch (InterruptedException ex) {

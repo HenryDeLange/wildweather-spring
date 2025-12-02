@@ -32,7 +32,7 @@ public class ChirpsApiScheduler {
     @Autowired
     private WeatherRepository repo;
 
-    // @Scheduled(cron = "0 0 4 * * *") // Run at 4AM
+    // @Scheduled(cron = "0 0 1 * * *") // Run at 1AM
     // void scheduledApiProcessing() {
     //     processApiData(false);
     // }

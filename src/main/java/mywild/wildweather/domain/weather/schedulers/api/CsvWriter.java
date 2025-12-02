@@ -36,7 +36,7 @@ final public class CsvWriter {
 
     private static final String SUMMARY_CSV_PREFIX = "{SOURCE}-high-lows-details-";
 
-    private static final DateTimeFormatter CSV_NAME_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
+    public static final DateTimeFormatter CSV_NAME_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private static final DateTimeFormatter DATE_FIELD_FORMAT =  DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
