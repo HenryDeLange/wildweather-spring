@@ -1,0 +1,162 @@
+openapi: 3.1.0
+info:
+  title: ClimateSERV Global API
+  version: 1.0.0
+  description: |
+    ClimateSERV provides access to rainfall, drought, and climate datasets.
+  contact:
+    name: Documentation
+    url: https://climateserv.servirglobal.net/develop-api
+
+servers:
+  - url: https://climateserv.servirglobal.net/api
+
+tags:
+- name: ClimateSERV
+  description: Weather data.
+
+paths:
+  /submitDataRequest/:
+    get:
+      tags:
+        - ClimateSERV
+      summary: Submit a new data request
+      description: |
+        Submits a request for climate data (e.g. CHIRPS rainfall).
+        Returns a request ID that can be used to check progress and download results.
+      parameters:
+        - name: datatype
+          in: query
+          required: true
+          schema:
+            type: integer
+            description: Dataset type code
+            example: 0
+        - name: ensemble
+          in: query
+          schema:
+            type: boolean
+            example: false
+        - name: begintime
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Start date (MM/DD/YYYY)
+            example: "06/16/2025"
+        - name: endtime
+          in: query
+          required: true
+          schema:
+            type: string
+            description: End date (MM/DD/YYYY)
+            example: "11/29/2025"
+        - name: intervaltype
+          in: query
+          schema:
+            type: integer
+            description: Interval type (0=daily, 1=monthly, etc.)
+            example: 0
+        - name: operationtype
+          in: query
+          schema:
+            type: integer
+            description: Operation type (e.g. 5=Average)
+            example: 5
+        - name: dateType_Category
+          in: query
+          schema:
+            type: string
+            example: default
+        - name: isZip_CurrentDataType
+          in: query
+          schema:
+            type: boolean
+            example: false
+        - name: geometry
+          in: query
+          required: true
+          schema:
+            type: string
+            description: GeoJSON FeatureCollection (URL-encoded)
+            example: '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[26.655423,-33.674522]}}]}'
+      responses:
+        "200":
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Request ID
+                    example: "76d0a745-b303-4410-a05b-9453d15b9893"
+
+  /getDataRequestProgress/:
+    get:
+      tags:
+        - ClimateSERV
+      summary: Check progress of a data request
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Request ID
+            example: "76d0a745-b303-4410-a05b-9453d15b9893"
+      responses:
+        "200":
+          description: Progress status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                    description: Current status (e.g. pending, processing, completed)
+                  percentComplete:
+                    type: number
+                    format: float
+                    example: 100.0
+
+  /getDataFromRequest/:
+    get:
+      tags:
+        - ClimateSERV
+      summary: Retrieve data from a completed request
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Request ID
+            example: "76d0a745-b303-4410-a05b-9453d15b9893"
+      responses:
+        "200":
+          description: Data payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                          example: "2025-06-16"
+                        value:
+                          type: number
+                          format: float
+                          example: 12.5

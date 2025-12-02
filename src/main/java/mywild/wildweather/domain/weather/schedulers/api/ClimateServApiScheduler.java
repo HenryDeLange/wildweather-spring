@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
+import mywild.climateserv.openapi.client.api.ClimateServApi;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 
 /**
@@ -13,11 +14,18 @@ import mywild.wildweather.domain.weather.data.WeatherRepository;
  * https://climateserv.servirglobal.net/
  * https://github.com/SERVIR/ClimateSERV/blob/master/docs/api.rst
  * https://climateserv.servirglobal.net/develop-api
+ * 
+ * Example:
+ * https://climateserv.servirglobal.net/api/submitDataRequest/?datatype=0&ensemble=false&begintime=06%2F16%2F2025&endtime=11%2F29%2F2025&intervaltype=0&operationtype=5&dateType_Category=default&isZip_CurrentDataType=false&geometry=%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%7B%22type%22:%22Feature%22,%22properties%22:%7B%7D,%22geometry%22:%7B%22type%22:%22Point%22,%22coordinates%22:%5B26.655423,-33.674522%5D%7D%7D%5D%7D
+ * https://climateserv.servirglobal.net/api/getDataRequestProgress/?id=76d0a745-b303-4410-a05b-9453d15b9893
+ * https://climateserv.servirglobal.net/api/getDataFromRequest/?id=76d0a745-b303-4410-a05b-9453d15b9893
  */
 
 @Slf4j
 @Service
-public class ChirpsApiScheduler {
+public class ClimateServApiScheduler {
+
+    private final int START_YEAR = 1981;
 
     public static final String CS_CSV_PREFIX = "api-climateserv-chirps";
 
@@ -26,8 +34,8 @@ public class ChirpsApiScheduler {
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;
 
-    // @Autowired
-    // private ClimateServApi api;
+    @Autowired
+    private ClimateServApi api;
 
     @Autowired
     private WeatherRepository repo;
@@ -45,12 +53,12 @@ public class ChirpsApiScheduler {
     @Async
     public void processApiData(boolean fetchAllData) {
         if (!IS_RUNNING.compareAndSet(false, true)) {
-            log.warn("Already busy processing ClimateSERV Chirps data... The new request will be ignored.");
+            log.warn("Already busy processing ClimateSERV data... The new request will be ignored.");
             return;
         }
         // try (Stream<Path> paths = Files.walk(Paths.get(csvRootFolder))) {
         //     log.info("********************************************");
-        //     log.info("Fetching ClimateSERV Chirps API data");
+        //     log.info("Fetching ClimateSERV API data");
         //     log.info("********************************************");
         //     List<Path> stationIdFiles = paths
         //         .filter(Files::isRegularFile)
@@ -194,7 +202,7 @@ public class ChirpsApiScheduler {
         // }
         // finally {
         //     log.info("********************************************");
-        //     log.info("Processed all ClimateSERV Chirps API data");
+        //     log.info("Processed all ClimateSERV API data");
         //     log.info("********************************************");
         //     IS_RUNNING.set(false);
         // }

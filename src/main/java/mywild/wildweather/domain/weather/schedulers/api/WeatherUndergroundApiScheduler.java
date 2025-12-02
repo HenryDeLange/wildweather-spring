@@ -30,6 +30,9 @@ import mywild.wildweather.domain.weather.schedulers.Utils;
  * https://docs.google.com/document/d/1eKCnKXI9xnoMGRRzOL1xPCBihNV2rOet08qpE_gArAY
  * https://docs.google.com/document/d/13HTLgJDpsb39deFzk_YCQ5GoGoZCO_cRYzIxbwvgJLI
  * https://docs.google.com/document/d/1w8jbqfAk0tfZS5P7hYnar1JiitM0gQZB-clxDfG3aD0
+ * 
+ * Example URL:
+ * https://api.weather.com/v2/pws/history/daily?startDate=20250101&endDate=20250131&format=json&units=m&numericPrecision=decimal&stationId=__STATION__&apiKey=__APIKEY__
  */
 
 @Slf4j
@@ -114,8 +117,6 @@ public class WeatherUndergroundApiScheduler {
                                 || (summaryCsvPath != null && !Files.exists(summaryCsvPath))) {
                             // Fetch the API data
                             log.info("   Fetching data for {} : {} to {}", stationId, apiStarDate.format(API_DATE_FORMAT), apiEndDate.format(API_DATE_FORMAT));
-                            // Example URL:
-                            // https://api.weather.com/v2/pws/history/daily?startDate=20250101&endDate=20250131&format=json&units=m&numericPrecision=decimal&stationId=__STATION__&apiKey=__APIKEY__
                             var httpData = api.getDailyWithHttpInfo(stationId, FormatEnum.JSON, UnitsEnum.METRIC, 
                                 null, apiStarDate.format(API_DATE_FORMAT), apiEndDate.format(API_DATE_FORMAT),
                                 NumericPrecisionEnum.DECIMAL);

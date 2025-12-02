@@ -7,6 +7,9 @@
     <Package name="~mywild\.weatherunderground\.openapi(\..*)?" />
   </Match>
   <Match>
+    <Package name="~mywild\.climateserv\.openapi(\..*)?" />
+  </Match>
+  <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
     <Class name="mywild.wildweather.framework.swagger.OpenApiYamlWriter" />
     <Method name="onWebServerReady" />
