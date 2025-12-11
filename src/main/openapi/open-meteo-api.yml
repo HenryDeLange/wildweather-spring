@@ -1,0 +1,184 @@
+openapi: 3.1.0
+info:
+  title: Open-Meteo Weather API
+  version: 1.0.0
+  description: |
+    Open-Meteo provides free global historical weather data based on ERA5 reanalysis.
+    This specification covers the /v1/archive endpoint for daily and hourly data.
+  contact:
+    name: Documentation
+    url: https://open-meteo.com/en/docs
+
+servers:
+  - url: https://archive-api.open-meteo.com
+
+paths:
+  /v1/archive:
+    get:
+      summary: Historical weather data (daily and hourly)
+      description: |
+        Returns historical weather variables for a given location and date range.
+        Data is sourced from ERA5 reanalysis (global, 1940-present).
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+          example: -33.674522
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+          example: 26.655423
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "1994-01-01"
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "1994-12-31"
+        - name: daily
+          in: query
+          required: false
+          description: Daily variables to return (comma-separated)
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/DailyVariable"
+          example: temperature_2m_max,temperature_2m_min,temperature_2m_mean,rain_sum,precipitation_sum
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            type: string
+          example: "auto"
+      responses:
+        "200":
+          description: Historical weather data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveResponse"
+
+components:
+  schemas:
+    ArchiveResponse:
+      type: object
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+        generationtime_ms:
+          type: number
+        utc_offset_seconds:
+          type: integer
+        timezone:
+          type: string
+        timezone_abbreviation:
+          type: string
+        elevation:
+          type: number
+        daily_units:
+          $ref: "#/components/schemas/DailyUnits"
+        daily:
+          $ref: "#/components/schemas/DailyData"
+    DailyUnits:
+      type: object
+      description: Units for each daily variable
+      additionalProperties:
+        type: string
+      example:
+        time: "iso8601"
+        temperature_2m_max: "°C"
+        temperature_2m_min: "°C"
+        temperature_2m_mean: "°C"
+        rain_sum: "mm"
+        precipitation_sum: "mm"
+        wind_speed_10m_max: "km/h"
+    DailyData:
+      type: object
+      description: Daily time series arrays
+      properties:
+        time:
+          type: array
+          items:
+            type: string
+            format: date
+        temperature_2m_max:
+          type: array
+          items:
+            type: number
+        temperature_2m_min:
+          type: array
+          items:
+            type: number
+        temperature_2m_mean:
+          type: array
+          items:
+            type: number
+        rain_sum:
+          type: array
+          items:
+            type: number
+        precipitation_sum:
+          type: array
+          items:
+            type: number
+        wind_direction_10m_dominant:
+          type: array
+          items:
+            type: number
+        wind_speed_10m_max:
+          type: array
+          items:
+            type: number
+        wind_gusts_10m_max:
+          type: array
+          items:
+            type: number
+        wind_speed_10m_mean:
+          type: array
+          items:
+            type: number
+        wind_gusts_10m_mean:
+          type: array
+          items:
+            type: number
+        wind_speed_10m_min:
+          type: array
+          items:
+            type: number
+        wind_gusts_10m_min:
+          type: array
+          items:
+            type: number
+    DailyVariable:
+      type: string
+      description: Daily weather variable
+      enum:
+        - temperature_2m_max
+        - temperature_2m_min
+        - temperature_2m_mean
+        - rain_sum
+        - precipitation_sum
+        - wind_direction_10m_dominant
+        - wind_speed_10m_max
+        - wind_gusts_10m_max
+        - wind_speed_10m_mean
+        - wind_gusts_10m_mean
+        - wind_speed_10m_min
+        - wind_gusts_10m_min

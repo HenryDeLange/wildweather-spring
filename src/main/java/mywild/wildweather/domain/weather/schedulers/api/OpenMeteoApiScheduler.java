@@ -10,22 +10,21 @@ import mywild.climateserv.openapi.client.api.ClimateServApi;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 
 /**
- * https://www.chc.ucsb.edu/data
- * https://climateserv.servirglobal.net/
- * https://github.com/SERVIR/ClimateSERV/blob/master/docs/api.rst
- * https://climateserv.servirglobal.net/develop-api
+ * https://open-meteo.com/
+ * https://open-meteo.com/en/docs
  * 
  * Example:
- * https://climateserv.servirglobal.net/api/submitDataRequest/?datatype=0&ensemble=false&begintime=06%2F16%2F2025&endtime=11%2F29%2F2025&intervaltype=0&operationtype=5&dateType_Category=default&isZip_CurrentDataType=false&geometry=%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%7B%22type%22:%22Feature%22,%22properties%22:%7B%7D,%22geometry%22:%7B%22type%22:%22Point%22,%22coordinates%22:%5B26.655423,-33.674522%5D%7D%7D%5D%7D
- * https://climateserv.servirglobal.net/api/getDataRequestProgress/?id=76d0a745-b303-4410-a05b-9453d15b9893
- * https://climateserv.servirglobal.net/api/getDataFromRequest/?id=76d0a745-b303-4410-a05b-9453d15b9893
+ * https://archive-api.open-meteo.com/v1/archive?latitude=-33.674522&longitude=26.655423&start_date=1994-01-01&end_date=1994-12-31&daily=rain_sum,precipitation_sum,temperature_2m_mean,temperature_2m_max,temperature_2m_min,wind_direction_10m_dominant,wind_gusts_10m_max,wind_speed_10m_max,wind_gusts_10m_mean,wind_speed_10m_mean,wind_gusts_10m_min,wind_speed_10m_min&timezone=auto
+ * 
+ * Limit:
+ * Less than 10 000 API calls per day, 5 000 per hour and 600 per minute.
  */
 
 // TODO: Implement this
 
 @Slf4j
 @Service
-public class ClimateServApiScheduler {
+public class OpenMeteoApiScheduler {
 
     private final int START_YEAR = 1981;
 

@@ -290,6 +290,37 @@
                             <generateModelTests>false</generateModelTests>
                         </configuration>
                     </execution>
+                    <!-- Open-Meteo API client -->
+                    <execution>
+                        <id>4-generate-api-client</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generatorName>java</generatorName>
+                            <library>okhttp-gson</library>
+                            <inputSpec>${project.basedir}/src/main/openapi/open-meteo-api.yml</inputSpec>
+                            <apiPackage>mywild.openmeteo.openapi.client.api</apiPackage>
+                            <modelPackage>mywild.openmeteo.openapi.client.model</modelPackage>
+                            <configOptions>
+                                <dateLibrary>java8</dateLibrary>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                <useJakartaEe>true</useJakartaEe>
+                                <useBeanValidation>true</useBeanValidation>
+                                <useRecords>true</useRecords>
+                                <openApiNullable>false</openApiNullable>
+                                <containerDefaultToNull>true</containerDefaultToNull>
+                                <generateBuilders>true</generateBuilders>
+                                <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
+                                <useEnumCaseInsensitive>true</useEnumCaseInsensitive>
+                                <useRuntimeException>true</useRuntimeException>
+                                <useGzipFeature>true</useGzipFeature>
+                            </configOptions>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
