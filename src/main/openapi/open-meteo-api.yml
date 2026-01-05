@@ -12,9 +12,15 @@ info:
 servers:
   - url: https://archive-api.open-meteo.com
 
+tags:
+- name: OpenMeteo
+  description: Weather data.
+
 paths:
   /v1/archive:
     get:
+      tags:
+        - OpenMeteo
       summary: Historical weather data (daily and hourly)
       description: |
         Returns historical weather variables for a given location and date range.

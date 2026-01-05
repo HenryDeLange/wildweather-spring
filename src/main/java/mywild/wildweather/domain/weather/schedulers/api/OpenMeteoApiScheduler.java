@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
-import mywild.climateserv.openapi.client.api.ClimateServApi;
+import mywild.openmeteo.openapi.client.api.OpenMeteoApi;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 
 /**
@@ -28,7 +28,7 @@ public class OpenMeteoApiScheduler {
 
     private final int START_YEAR = 1981;
 
-    public static final String CS_CSV_PREFIX = "api-climateserv-chirps";
+    public static final String CS_CSV_PREFIX = "api-openmeteo-chirps";
 
     private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
 
@@ -36,7 +36,7 @@ public class OpenMeteoApiScheduler {
     private String csvRootFolder;
 
     @Autowired
-    private ClimateServApi api;
+    private OpenMeteoApi api;
 
     @Autowired
     private WeatherRepository repo;

@@ -3,22 +3,22 @@ package mywild.wildweather.openapi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import lombok.extern.slf4j.Slf4j;
-import mywild.climateserv.openapi.client.ApiClient;
-import mywild.climateserv.openapi.client.api.ClimateServApi;
+import mywild.openmeteo.openapi.client.ApiClient;
+import mywild.openmeteo.openapi.client.api.OpenMeteoApi;
 
 @Slf4j
 @Configuration
 public class OpenMeteoApiConfig {
 
     @Bean
-    ApiClient climateServApiClient() {
-        ApiClient apiClient = mywild.climateserv.openapi.client.Configuration.getDefaultApiClient();
+    ApiClient openMeteoApiClient() {
+        ApiClient apiClient = mywild.openmeteo.openapi.client.Configuration.getDefaultApiClient();
         return apiClient;
     }
 
     @Bean
-    ClimateServApi climateServApi(ApiClient climateServApiClient) {
-        return new ClimateServApi(climateServApiClient);
+    OpenMeteoApi openMeteoApi(ApiClient openMeteoApiClient) {
+        return new OpenMeteoApi(openMeteoApiClient);
     }
 
 }
