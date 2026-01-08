@@ -21,6 +21,7 @@ paths:
     get:
       tags:
         - OpenMeteo
+      operationId: getArchive
       summary: Historical weather data (daily and hourly)
       description: |
         Returns historical weather variables for a given location and date range.
@@ -86,8 +87,10 @@ components:
       properties:
         latitude:
           type: number
+          format: float
         longitude:
           type: number
+          format: float
         generationtime_ms:
           type: number
         utc_offset_seconds:
@@ -128,50 +131,92 @@ components:
           type: array
           items:
             type: number
+            format: float
         temperature_2m_min:
           type: array
           items:
             type: number
+            format: float
         temperature_2m_mean:
           type: array
           items:
             type: number
+            format: float
         rain_sum:
           type: array
           items:
             type: number
+            format: float
         precipitation_sum:
           type: array
           items:
             type: number
+            format: float
         wind_direction_10m_dominant:
           type: array
           items:
             type: number
+            format: float
         wind_speed_10m_max:
           type: array
           items:
             type: number
+            format: float
         wind_gusts_10m_max:
           type: array
           items:
             type: number
+            format: float
         wind_speed_10m_mean:
           type: array
           items:
             type: number
+            format: float
         wind_gusts_10m_mean:
           type: array
           items:
             type: number
+            format: float
         wind_speed_10m_min:
           type: array
           items:
             type: number
+            format: float
         wind_gusts_10m_min:
           type: array
           items:
             type: number
+            format: float
+        relative_humidity_2m_max:
+          type: array
+          items:
+            type: number
+            format: float
+        relative_humidity_2m_mean:
+          type: array
+          items:
+            type: number
+            format: float
+        relative_humidity_2m_min:
+          type: array
+          items:
+            type: number
+            format: float
+        surface_pressure_max:
+          type: array
+          items:
+            type: number
+            format: float
+        surface_pressure_mean:
+          type: array
+          items:
+            type: number
+            format: float
+        surface_pressure_min:
+          type: array
+          items:
+            type: number
+            format: float
     DailyVariable:
       type: string
       description: Daily weather variable
@@ -183,8 +228,14 @@ components:
         - precipitation_sum
         - wind_direction_10m_dominant
         - wind_speed_10m_max
-        - wind_gusts_10m_max
         - wind_speed_10m_mean
-        - wind_gusts_10m_mean
         - wind_speed_10m_min
+        - wind_gusts_10m_max
+        - wind_gusts_10m_mean
         - wind_gusts_10m_min
+        - relative_humidity_2m_max
+        - relative_humidity_2m_mean
+        - relative_humidity_2m_min
+        - surface_pressure_max
+        - surface_pressure_mean
+        - surface_pressure_min

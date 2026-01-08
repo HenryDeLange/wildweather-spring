@@ -20,6 +20,7 @@ paths:
     get:
       tags:
         - ClimateSERV
+      operationId: submitDataRequest
       summary: Submit a new data request
       description: |
         Submits a request for climate data (e.g. CHIRPS rainfall).
@@ -97,6 +98,7 @@ paths:
     get:
       tags:
         - ClimateSERV
+      operationId: getDataRequestProgress
       summary: Check progress of a data request
       parameters:
         - name: id
@@ -128,6 +130,7 @@ paths:
     get:
       tags:
         - ClimateSERV
+      operationId: getDataFromRequest
       summary: Retrieve data from a completed request
       parameters:
         - name: id

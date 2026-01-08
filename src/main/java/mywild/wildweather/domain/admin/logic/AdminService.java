@@ -7,8 +7,9 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.admin.web.dto.ApiStatus;
 import mywild.wildweather.domain.admin.web.dto.CsvStatus;
-import mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler;
-import mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.ambientweather.AmbientWeatherScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.openmeteo.OpenMeteoScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.weatherunderground.WeatherUndergroundScheduler;
 import mywild.wildweather.domain.weather.schedulers.csv.WeatherCsvScheduler;
 
 @Slf4j
@@ -20,10 +21,13 @@ public class AdminService {
     private WeatherCsvScheduler csvScheduler;
 
     @Autowired
-    private AmbientWeatherApiScheduler ambientWeatherApiScheduler;
+    private AmbientWeatherScheduler ambientWeatherScheduler;
 
     @Autowired
-    private WeatherUndergroundApiScheduler weatherUndergroundApiScheduler;
+    private WeatherUndergroundScheduler weatherUndergroundScheduler;
+
+    @Autowired
+    private OpenMeteoScheduler openMeteoScheduler;
 
     public void triggerCsvProcessing(boolean forceFullReload) {
         if (forceFullReload) {
@@ -40,19 +44,27 @@ public class AdminService {
     }
 
     public void triggerAmbientWeatherApiProcessing() {
-        ambientWeatherApiScheduler.processApiData();
+        ambientWeatherScheduler.processApiData(false);
     }
 
     public @Valid ApiStatus getAmbientWeatherApiProcessStatus() {
-        return new ApiStatus(ambientWeatherApiScheduler.isRunning());
+        return new ApiStatus(ambientWeatherScheduler.isRunning());
     }
 
     public void triggerWeatherUndergroundApiProcessing(boolean fetchAllData) {
-        weatherUndergroundApiScheduler.processApiData(fetchAllData);
+        weatherUndergroundScheduler.processApiData(fetchAllData);
     }
 
     public @Valid ApiStatus getWeatherUndergroundApiProcessStatus() {
-        return new ApiStatus(weatherUndergroundApiScheduler.isRunning());
+        return new ApiStatus(weatherUndergroundScheduler.isRunning());
+    }
+
+    public void triggerOpenMeteoApiProcessing(boolean fetchAllData) {
+        openMeteoScheduler.processApiData(fetchAllData);
+    }
+
+    public @Valid ApiStatus getOpenMeteoApiProcessStatus() {
+        return new ApiStatus(openMeteoScheduler.isRunning());
     }
 
 }

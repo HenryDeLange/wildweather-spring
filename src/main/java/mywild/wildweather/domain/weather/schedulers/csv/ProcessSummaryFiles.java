@@ -26,7 +26,9 @@ import mywild.wildweather.domain.weather.data.entity.WeatherCategory;
 import mywild.wildweather.domain.weather.data.entity.WeatherEntity;
 import mywild.wildweather.domain.weather.schedulers.SchedulerThreadFactory;
 import mywild.wildweather.domain.weather.schedulers.Utils;
-import mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.climateserv.ClimateServScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.openmeteo.OpenMeteoScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.weatherunderground.WeatherUndergroundScheduler;
 
 @Slf4j
 @Component
@@ -67,7 +69,9 @@ public class ProcessSummaryFiles {
             new SchedulerThreadFactory("s-csv-"));
         executor.invokeAll(tasks);
         csvFiles.stream()
-            .filter(path -> path.toString().toLowerCase(Locale.ROOT).contains(WeatherUndergroundApiScheduler.WU_CSV_PREFIX))
+            .filter(path -> path.toString().toLowerCase(Locale.ROOT).contains(WeatherUndergroundScheduler.CSV_PREFIX)
+                         || path.toString().toLowerCase(Locale.ROOT).contains(OpenMeteoScheduler.CSV_PREFIX)
+                         || path.toString().toLowerCase(Locale.ROOT).contains(ClimateServScheduler.CSV_PREFIX))
             .forEach(csvFile -> {
                 tasks.add(() -> {
                     processSummaryFile(csvFile);

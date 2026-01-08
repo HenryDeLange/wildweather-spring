@@ -19,14 +19,11 @@ import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 import mywild.wildweather.domain.weather.schedulers.api.CsvWriter;
-import mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler;
+import mywild.wildweather.domain.weather.schedulers.api.weatherunderground.WeatherUndergroundScheduler;
 
 @Slf4j
 @Service
 public class WeatherCsvScheduler {
-
-    private static final int SCHEDULE_DELAY = 2 * 1000; // 2 seconds
-    private static final int SCHEDULE_RATE = 60 * 60 * 1000; // 1 hour
 
     private static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
 
@@ -48,8 +45,9 @@ public class WeatherCsvScheduler {
     void startupCsvFilesProcessing() {
         processCsvFiles();
     }
-    
-    @Scheduled(cron = "0 0 4 * * *") // Run at 4AM
+
+    // Run at 5AM
+    @Scheduled(cron = "0 0 5 * * *")
     void scheduledCsvFilesProcessing() {
         resetLatestWeatherUndergroundProcessedCsvFiles();
         processCsvFiles();
@@ -64,7 +62,7 @@ public class WeatherCsvScheduler {
         var currentMonth = LocalDate.now().withDayOfMonth(1);
         PROCESSED_CSV_FILES.clear();
         PROCESSED_CSV_FILES.addAll(PROCESSED_CSV_FILES.stream()
-            .filter(csv -> !csv.contains(WeatherUndergroundApiScheduler.WU_CSV_PREFIX)
+            .filter(csv -> !csv.contains(WeatherUndergroundScheduler.CSV_PREFIX)
                         || !csv.contains(currentMonth.format(CsvWriter.CSV_NAME_DATE_FORMAT))
                         && !csv.contains(currentMonth.minusMonths(1).format(CsvWriter.CSV_NAME_DATE_FORMAT)))
             .toList());
