@@ -28,22 +28,12 @@
   </Match>
   <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.AbstractScheduler" />
     <Method name="processApiData" />
   </Match>
   <Match>
     <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.AmbientWeatherApiScheduler" />
-    <Method name="processApiData" />
-  </Match>
-  <Match>
-    <Bug pattern="NP_NULL_ON_SOME_PATH" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler" />
-    <Method name="processApiData" />
-  </Match>
-  <Match>
-    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
-    <Class name="mywild.wildweather.domain.weather.schedulers.api.WeatherUndergroundApiScheduler" />
+    <Class name="mywild.wildweather.domain.weather.schedulers.api.AbstractScheduler" />
     <Method name="processApiData" />
   </Match>
   <Match>

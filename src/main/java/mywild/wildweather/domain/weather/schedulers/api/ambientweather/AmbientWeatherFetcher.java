@@ -2,8 +2,9 @@ package mywild.wildweather.domain.weather.schedulers.api.ambientweather;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.OffsetTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,7 +54,7 @@ public class AmbientWeatherFetcher extends AbstractFetcher {
 
     @Override
     public List<FetchedWeatherRecord> fetchRecords(String station, LocalDate apiStarDate, LocalDate apiEndDate, List<String> badDays) {
-        OffsetDateTime apiEndDateTime = apiEndDate.atTime(OffsetTime.MAX);
+        OffsetDateTime apiEndDateTime = apiEndDate.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
         var data = api.getDeviceData(station, apiEndDateTime, EXPECTED_RECORDS_PER_DAY);
         if (data != null && !data.isEmpty()) {
             List<FetchedWeatherRecord> records = new ArrayList<>(data.size());
@@ -78,56 +79,56 @@ public class AmbientWeatherFetcher extends AbstractFetcher {
                         recordDate, apiEndDate);
                     break;
                 }
-                Map<String, Double> calculatedAverage = getCalculatedAverage(average);
-                records.add(FetchedWeatherRecord.builder()
-                    .date(recordDate)
-                    .temperature(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_TMP))
-                        .average(calculatedAverage.get(FIELD_TMP))
-                        .high(high.get(FIELD_TMP))
-                        .build())
-                    .rain(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_RNT))
-                        .average(calculatedAverage.get(FIELD_RNT))
-                        .high(high.get(FIELD_RNT))
-                        .build())
-                    .rainRate(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_RNR))
-                        .average(calculatedAverage.get(FIELD_RNR))
-                        .high(high.get(FIELD_RNR))
-                        .build())
-                    .windDirection(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_WDR))
-                        .average(calculatedAverage.get(FIELD_WDR))
-                        .high(high.get(FIELD_WDR))
-                        .build())
-                    .wind(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_WND))
-                        .average(calculatedAverage.get(FIELD_WND))
-                        .high(high.get(FIELD_WND))
-                        .build())
-                    .gust(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_GST))
-                        .average(calculatedAverage.get(FIELD_GST))
-                        .high(high.get(FIELD_GST))
-                        .build())
-                    .humidity(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_HMT))
-                        .average(calculatedAverage.get(FIELD_HMT))
-                        .high(high.get(FIELD_HMT))
-                        .build())
-                    .pressure(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_PRS))
-                        .average(calculatedAverage.get(FIELD_PRS))
-                        .high(high.get(FIELD_PRS))
-                        .build())
-                    .uvRadiation(FetchedWeatherField.builder()
-                        .low(low.get(FIELD_UVI))
-                        .average(calculatedAverage.get(FIELD_UVI))
-                        .high(high.get(FIELD_UVI))
-                        .build())
-                    .build());
             }
+            Map<String, Double> calculatedAverage = getCalculatedAverage(average);
+            records.add(FetchedWeatherRecord.builder()
+                .date(apiEndDate)
+                .temperature(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_TMP))
+                    .average(calculatedAverage.get(FIELD_TMP))
+                    .high(high.get(FIELD_TMP))
+                    .build())
+                .rain(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_RNT))
+                    .average(calculatedAverage.get(FIELD_RNT))
+                    .high(high.get(FIELD_RNT))
+                    .build())
+                .rainRate(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_RNR))
+                    .average(calculatedAverage.get(FIELD_RNR))
+                    .high(high.get(FIELD_RNR))
+                    .build())
+                .windDirection(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_WDR))
+                    .average(calculatedAverage.get(FIELD_WDR))
+                    .high(high.get(FIELD_WDR))
+                    .build())
+                .wind(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_WND))
+                    .average(calculatedAverage.get(FIELD_WND))
+                    .high(high.get(FIELD_WND))
+                    .build())
+                .gust(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_GST))
+                    .average(calculatedAverage.get(FIELD_GST))
+                    .high(high.get(FIELD_GST))
+                    .build())
+                .humidity(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_HMT))
+                    .average(calculatedAverage.get(FIELD_HMT))
+                    .high(high.get(FIELD_HMT))
+                    .build())
+                .pressure(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_PRS))
+                    .average(calculatedAverage.get(FIELD_PRS))
+                    .high(high.get(FIELD_PRS))
+                    .build())
+                .uvRadiation(FetchedWeatherField.builder()
+                    .low(low.get(FIELD_UVI))
+                    .average(calculatedAverage.get(FIELD_UVI))
+                    .high(high.get(FIELD_UVI))
+                    .build())
+                .build());
             return records;
         }
         else {

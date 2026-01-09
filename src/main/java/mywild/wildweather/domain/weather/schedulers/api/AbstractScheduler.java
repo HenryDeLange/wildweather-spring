@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import mywild.wildweather.domain.weather.data.WeatherRepository;
 import mywild.wildweather.domain.weather.schedulers.Utils;
@@ -34,8 +33,7 @@ public abstract class AbstractScheduler {
 
     private final AbstractFetcher fetcher;
 
-    @Setter
-    private int stopAtEmptyResponses = 2;
+    private final int stopAtEmptyResponses;
 
     @Value("${mywild.csv.folder}")
     private String csvRootFolder;

@@ -20,8 +20,7 @@ public class WeatherUndergroundScheduler extends AbstractScheduler {
     private static final int STOP_AT_EMPTY_RESPONSES = 24; // Months without data
 
     public WeatherUndergroundScheduler(WeatherUndergroundFetcher api) {
-        super(NAME, CSV_PREFIX, api);
-        setStopAtEmptyResponses(STOP_AT_EMPTY_RESPONSES);
+        super(NAME, CSV_PREFIX, api, STOP_AT_EMPTY_RESPONSES);
     }
 
     // Run at 2AM

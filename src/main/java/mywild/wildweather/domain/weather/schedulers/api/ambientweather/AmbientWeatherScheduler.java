@@ -17,7 +17,7 @@ public class AmbientWeatherScheduler extends AbstractScheduler {
     private static final String CSV_PREFIX = "api-ambient-weather";
 
     public AmbientWeatherScheduler(AmbientWeatherFetcher api) {
-        super(NAME, CSV_PREFIX, api);
+        super(NAME, CSV_PREFIX, api, 1);
     }
 
     // Run at 1AM

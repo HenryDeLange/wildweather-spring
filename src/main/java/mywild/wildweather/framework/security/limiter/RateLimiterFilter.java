@@ -29,6 +29,9 @@ public class RateLimiterFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
+        if (!(request instanceof HttpServletRequest)) {
+            return;
+        }
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         boolean isWithinLimit = true;
         if (!globalRateLimiter.getBucket().tryConsume(1)) {

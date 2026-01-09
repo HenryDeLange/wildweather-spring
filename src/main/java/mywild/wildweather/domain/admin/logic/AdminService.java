@@ -43,8 +43,8 @@ public class AdminService {
         return new CsvStatus(csvScheduler.isRunning());
     }
 
-    public void triggerAmbientWeatherApiProcessing() {
-        ambientWeatherScheduler.processApiData(false);
+    public void triggerAmbientWeatherApiProcessing(boolean fetchAllData) {
+        ambientWeatherScheduler.processApiData(fetchAllData);
     }
 
     public @Valid ApiStatus getAmbientWeatherApiProcessStatus() {

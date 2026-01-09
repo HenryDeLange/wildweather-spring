@@ -213,6 +213,12 @@ paths:
       - Admin
       summary: Manually trigger the processing of Ambient Weather API data.
       operationId: triggerAmbientWeatherApiProcessing
+      parameters:
+      - name: fetchAllData
+        in: query
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           description: OK

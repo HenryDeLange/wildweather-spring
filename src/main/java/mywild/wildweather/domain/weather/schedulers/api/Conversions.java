@@ -6,7 +6,7 @@ public final class Conversions {
         // prevent instantiation
     }
 
-    public static final String[] DIRECTIONS = {
+    private static final String[] DIRECTIONS = {
         "N", "NNE", "NE", "ENE",
         "E", "ESE", "SE", "SSE",
         "S", "SSW", "SW", "WSW",

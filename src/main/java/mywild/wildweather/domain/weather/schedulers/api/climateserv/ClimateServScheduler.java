@@ -18,7 +18,7 @@ public class ClimateServScheduler extends AbstractScheduler {
     private static final LocalDate START_YEAR = LocalDate.of(1980, 1, 1);
 
     public ClimateServScheduler(ClimateServFetcher api) {
-        super(NAME, CSV_PREFIX, api);
+        super(NAME, CSV_PREFIX, api, 1);
     }
 
     // Run at 4AM

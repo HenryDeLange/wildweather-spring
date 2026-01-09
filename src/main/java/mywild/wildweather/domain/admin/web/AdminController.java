@@ -33,8 +33,8 @@ public class AdminController extends BaseController {
 
     @Operation(summary = "Manually trigger the processing of Ambient Weather API data.")
     @PostMapping("/admin/process/api/ambient-weather")
-    public void triggerAmbientWeatherApiProcessing() {
-        service.triggerAmbientWeatherApiProcessing();
+    public void triggerAmbientWeatherApiProcessing(@RequestParam(required = false) boolean fetchAllData) {
+        service.triggerAmbientWeatherApiProcessing(fetchAllData);
     }
 
     @Operation(summary = "Status of processing the Ambient Weather API data.")

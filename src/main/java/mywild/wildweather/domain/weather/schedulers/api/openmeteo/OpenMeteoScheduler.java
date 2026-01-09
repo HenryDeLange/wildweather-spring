@@ -20,7 +20,7 @@ public class OpenMeteoScheduler extends AbstractScheduler {
     private static final LocalDate START_YEAR = LocalDate.of(1940, 1, 1);
 
     public OpenMeteoScheduler(OpenMeteoFetcher api) {
-        super(NAME, CSV_PREFIX, api);
+        super(NAME, CSV_PREFIX, api, 1);
     }
 
     // Run at 3AM
