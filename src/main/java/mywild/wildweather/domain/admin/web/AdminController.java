@@ -33,8 +33,8 @@ public class AdminController extends BaseController {
 
     @Operation(summary = "Manually trigger the processing of Ambient Weather API data.")
     @PostMapping("/admin/process/api/ambient-weather")
-    public void triggerAmbientWeatherApiProcessing() {
-        service.triggerAmbientWeatherApiProcessing();
+    public void triggerAmbientWeatherApiProcessing(@RequestParam(required = false) boolean fetchAllData) {
+        service.triggerAmbientWeatherApiProcessing(fetchAllData);
     }
 
     @Operation(summary = "Status of processing the Ambient Weather API data.")
@@ -53,6 +53,18 @@ public class AdminController extends BaseController {
     @GetMapping("/admin/process/api/weather-underground")
     public ApiStatus getWeatherUndergroundApiProcessStatus() {
         return service.getWeatherUndergroundApiProcessStatus();
+    }
+
+    @Operation(summary = "Manually trigger the processing of Open-Meteo API data.")
+    @PostMapping("/admin/process/api/open-meteo")
+    public void triggerOpenMeteoApiProcessing(@RequestParam(required = false) boolean fetchAllData) {
+        service.triggerOpenMeteoApiProcessing(fetchAllData);
+    }
+
+    @Operation(summary = "Status of processing the Open-Meteo API data.")
+    @GetMapping("/admin/process/api/open-meteo")
+    public ApiStatus getOpenMeteoApiProcessStatus() {
+        return service.getOpenMeteoApiProcessStatus();
     }
 
 }

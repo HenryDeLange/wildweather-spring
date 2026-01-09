@@ -1,39 +1,39 @@
 package mywild.wildweather.domain.weather.schedulers.api;
 
-final class Conversions {
+public final class Conversions {
 
     private Conversions() {
         // prevent instantiation
     }
 
-    static final String[] DIRECTIONS = {
+    private static final String[] DIRECTIONS = {
         "N", "NNE", "NE", "ENE",
         "E", "ESE", "SE", "SSE",
         "S", "SSW", "SW", "WSW",
         "W", "WNW", "NW", "NNW"
     };
 
-    static double roundToOneDecimal(double value) {
+    public static double roundToOneDecimal(double value) {
         return Math.round(value * 10.0) / 10.0;
     }
 
-    static double fahToCel(double fahrenheit) {
+    public static double fahToCel(double fahrenheit) {
         return roundToOneDecimal((fahrenheit - 32) * 5.0 / 9.0);
     }
 
-    static double mphToKmh(double mph) {
+    public static double mphToKmh(double mph) {
         return roundToOneDecimal(mph * 1.609344);
     }
 
-    static double inToMm(double inches) {
+    public static double inToMm(double inches) {
         return roundToOneDecimal(inches * 25.4);
     }
 
-    static double inHgToHpa(double inHg) {
+    public static double inHgToHpa(double inHg) {
         return roundToOneDecimal(inHg * 33.8639);
     }
 
-    static String degreesToDirection(Double degrees) {
+    public static String degreesToDirection(Double degrees) {
         if (degrees == null || degrees.isNaN()) {
             return null;
         }

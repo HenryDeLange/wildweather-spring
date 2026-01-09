@@ -3,10 +3,10 @@ package mywild.wildweather.domain.weather.schedulers.api;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.commons.csv.CSVFormat;
@@ -34,9 +34,9 @@ final public class CsvWriter {
         "Ultra-Violet Radiation Index"  // 8
     };
 
-    private static final String SUMMARY_CSV_PREFIX = "{SOURCE}-high-lows-details-";
+    private static final String SUMMARY_CSV_PREFIX = "{SOURCE}-high-lows-";
 
-    private static final DateTimeFormatter CSV_NAME_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
+    public static final DateTimeFormatter CSV_NAME_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private static final DateTimeFormatter DATE_FIELD_FORMAT =  DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -46,65 +46,21 @@ final public class CsvWriter {
         return parentPath.resolve(SUMMARY_CSV_PREFIX.replace("{SOURCE}", source)
             + csvStartDateStamp + csvEndDateStamp + ".csv");
     }
-    
-    public static void writeSingleDayCsvFile(
-            Path path,
-            LocalDate date,
-            List<Double> averages,
-            List<Double> highs,
-            List<Double> lows
-    ) {
-        log.debug("Writing CSV file: {}", path);
-        if (!Files.exists(path)) {
-            try (
-                FileWriter writer = new FileWriter(path.toFile(), Charset.defaultCharset());
-                CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(CSV_HEADERS).get())
-            ) {
-                printer.printRecord(Stream.of(
-                    Stream.of("Average", date.format(DATE_FIELD_FORMAT)),
-                    averages.subList(0, 3).stream(),
-                    Stream.of(Conversions.degreesToDirection(averages.get(3))),
-                    averages.subList(4, averages.size()).stream()
-                ).flatMap(s -> s).toArray());
-                printer.printRecord(Stream.of(
-                    Stream.of("High", date.format(DATE_FIELD_FORMAT)),
-                    highs.subList(0, 3).stream(),
-                    Stream.of(""),
-                    highs.subList(4, highs.size()).stream()
-                ).flatMap(s -> s).toArray());
-                printer.printRecord(Stream.of(
-                    Stream.of("Low", date.format(DATE_FIELD_FORMAT)),
-                    lows.subList(0, 3).stream(),
-                    Stream.of(""),
-                    lows.subList(4, lows.size()).stream()
-                ).flatMap(s -> s).toArray());
-            }
-            catch (IOException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        }
-        else {
-            log.warn("   CSV file already exists : {}", path);
-        }
-    }
 
-    public static void writeMultiDayCsvFile(
+    public static void writeCsvFile(
             Path path,
-            List<LocalDate> dates,
-            List<List<Double>> averages,
-            List<List<Double>> highs,
-            List<List<Double>> lows
+            List<FetchedWeatherRecord> records
     ) {
         log.debug("Writing CSV file: {}", path);
         try (
             FileWriter writer = new FileWriter(path.toFile(), Charset.defaultCharset());
             CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(CSV_HEADERS).get())
         ) {
-            for (int i = 0; i < dates.size(); i++) {
-                var dateValue = dates.get(i);
-                var lowValues = lows.get(i);
-                var averageValues = averages.get(i);
-                var highValues = highs.get(i);
+            for (var record : records) {
+                var dateValue = record.getDate();
+                var lowValues = getCsvLowValues(record);
+                var averageValues = getCsvAverageValues(record);
+                var highValues = getCsvHighValues(record);
                 printer.printRecord(Stream.of(
                     Stream.of("Average", dateValue.format(DATE_FIELD_FORMAT)),
                     averageValues.subList(0, 3).stream(),
@@ -128,6 +84,48 @@ final public class CsvWriter {
         catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
+    }
+
+    private static List<Double> getCsvLowValues(FetchedWeatherRecord record) {
+        return Arrays.asList(
+            record.getTemperature() != null ? record.getTemperature().getLow() : null,      // 0
+            record.getWind() != null ? record.getWind().getLow() : null,                    // 1
+            record.getGust() != null ? record.getGust().getLow() : null,                    // 2
+            record.getWindDirection() != null ? record.getWindDirection().getLow() : null,  // 3
+            record.getRainRate() != null ? record.getRainRate().getLow() : null,            // 4
+            record.getRain() != null ? record.getRain().getLow() : null,                    // 5
+            record.getPressure() != null ? record.getPressure().getLow() : null,            // 6
+            record.getHumidity() != null ? record.getHumidity().getLow() : null,            // 7
+            record.getUvRadiation() != null ? record.getUvRadiation().getLow() : null       // 8
+        );
+    }
+
+    private static List<Double> getCsvAverageValues(FetchedWeatherRecord record) {
+        return Arrays.asList(
+            record.getTemperature() != null ? record.getTemperature().getAverage() : null,      // 0
+            record.getWind() != null ? record.getWind().getAverage() : null,                    // 1
+            record.getGust() != null ? record.getGust().getAverage() : null,                    // 2
+            record.getWindDirection() != null ? record.getWindDirection().getAverage() : null,  // 3
+            record.getRainRate() != null ? record.getRainRate().getAverage() : null,            // 4
+            record.getRain() != null ? record.getRain().getAverage() : null,                    // 5
+            record.getPressure() != null ? record.getPressure().getAverage() : null,            // 6
+            record.getHumidity() != null ? record.getHumidity().getAverage() : null,            // 7
+            record.getUvRadiation() != null ? record.getUvRadiation().getAverage() : null       // 8
+        );
+    }
+
+    private static List<Double> getCsvHighValues(FetchedWeatherRecord record) {
+        return Arrays.asList(
+            record.getTemperature() != null ? record.getTemperature().getHigh() : null,     // 0
+            record.getWind() != null ? record.getWind().getHigh() : null,                   // 1
+            record.getGust() != null ? record.getGust().getHigh() : null,                   // 2
+            record.getWindDirection() != null ? record.getWindDirection().getHigh() : null, // 3
+            record.getRainRate() != null ? record.getRainRate().getHigh() : null,           // 4
+            record.getRain() != null ? record.getRain().getHigh() : null,                   // 5
+            record.getPressure() != null ? record.getPressure().getHigh() : null,           // 6
+            record.getHumidity() != null ? record.getHumidity().getHigh() : null,           // 7
+            record.getUvRadiation() != null ? record.getUvRadiation().getHigh() : null      // 8
+        );
     }
 
 }
