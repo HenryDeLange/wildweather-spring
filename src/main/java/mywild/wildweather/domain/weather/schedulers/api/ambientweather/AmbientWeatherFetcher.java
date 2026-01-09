@@ -36,8 +36,6 @@ import mywild.wildweather.domain.weather.schedulers.api.FetchedWeatherRecord;
 @Service
 public class AmbientWeatherFetcher extends AbstractFetcher {
 
-    // private static final DateTimeFormatter API_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
     private static final int EXPECTED_RECORDS_PER_DAY = 24 * (60 / 5); // 288 (Every 5 minutes)
 
     private static final String FIELD_TMP = "tmp";

@@ -32,12 +32,6 @@ import mywild.wildweather.domain.weather.schedulers.api.FetchedWeatherRecord;
 @Service
 public class OpenMeteoFetcher extends AbstractFetcher {
 
-    // private static final DateTimeFormatter API_DATE_FORMAT =  DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-    private static final float LATITUDE = -33.674522f;
-
-    private static final float LONGITUDE = 26.655423f;
-
     private static final List<DailyVariable> FIELDS = List.of(
         DailyVariable.TEMPERATURE_2M_MIN,
         DailyVariable.TEMPERATURE_2M_MEAN,
@@ -64,9 +58,12 @@ public class OpenMeteoFetcher extends AbstractFetcher {
 
     @Override
     public List<FetchedWeatherRecord> fetchRecords(String station, LocalDate apiStarDate, LocalDate apiEndDate, List<String> badDays) {
+        var coords = station.split(",");
+        float latitude = Float.parseFloat(coords[0].trim());
+        float longitude = Float.parseFloat(coords[1].trim());
         var data = api.getArchive(
-            LATITUDE,
-            LONGITUDE, 
+            latitude,
+            longitude, 
             apiStarDate, 
             apiEndDate, 
             FIELDS,

@@ -40,7 +40,12 @@ public class OpenMeteoScheduler extends AbstractScheduler {
             // Start of the current year
             return LocalDate.now(ZoneOffset.UTC).withDayOfYear(1);
         }
-        return currentStartDate.minusYears(1);
+        var prevYear = currentStartDate.minusYears(1);
+        if (prevYear.getYear() == START_YEAR.getYear()) {
+            // 1940-01-01 has null values, the data seems to start from 1940-01-02
+            return prevYear.plusDays(1);
+        }
+        return prevYear;
     }
 
     @Override
