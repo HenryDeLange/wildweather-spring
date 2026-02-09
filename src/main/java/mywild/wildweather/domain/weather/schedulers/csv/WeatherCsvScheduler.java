@@ -46,8 +46,8 @@ public class WeatherCsvScheduler {
         processCsvFiles();
     }
 
-    // Run at 5AM
-    @Scheduled(cron = "0 0 5 * * *")
+    // Run at 4AM
+    @Scheduled(cron = "0 0 4 * * *")
     void scheduledCsvFilesProcessing() {
         resetLatestWeatherUndergroundProcessedCsvFiles();
         processCsvFiles();

@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +65,7 @@ public class JwtConfig {
     private OAuth2TokenValidator<Jwt> tokenValidator() {
         final List<OAuth2TokenValidator<Jwt>> validators =
                 List.of(
+                    new JwtTimestampValidator(),
                     new JwtIssuerValidator(issuer),
                     audienceValidator(),
                     subjectValidator()
