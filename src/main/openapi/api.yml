@@ -2,11 +2,9 @@ openapi: 3.1.0
 info:
   title: WildWeather API
   description: "Include <code>'Authorization: Bearer &lt;jwt&gt;'</code> (when authenticated)\
-    \ and <code>'Accept-Language: &lt;code&gt;'</code> in the <b>request header</b>."
+    \ and <code>'Accept-Language: &lt;code&gt;'</code> in the <b>request header</b>.<br/><br/>Download\
+    \ the OpenAPI YAML: <a href=\"/v3/api-docs.yaml\">/v3/api-docs.yaml</a>"
   version: 1.0.0
-externalDocs:
-  description: Download OpenAPI YAML Specification
-  url: /v3/api-docs.yaml
 servers:
 - url: /
 security:

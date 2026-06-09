@@ -57,7 +57,7 @@
   {
     "name": "mywild.api-path",
     "type": "java.lang.String",
-    "description": "The base URL path for the API."
+    "description": "The base URL path for the API. (Needs to start with '/'.)"
   },
   {
     "name": "mywild.rate.concurrent-users-limit",

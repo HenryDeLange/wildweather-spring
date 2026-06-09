@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.lang.NonNull;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -43,7 +44,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
         registry.addInterceptor(interceptor)
-                .addPathPatterns("/" + apiPath + "/**")
+                .addPathPatterns(apiPath + "/**")
                 .excludePathPatterns(
                     "/v3/api-docs", 
                     "/v3/api-docs.*", 
@@ -91,6 +92,9 @@ public class SecurityConfig implements WebMvcConfigurer {
                     .requestMatchers(apiPath + "/version/**").permitAll()
                     // Domain Endpoints
                     .requestMatchers(apiPath + "/weather/**").permitAll()
+                    // Admin Endpoints
+                    .requestMatchers(HttpMethod.GET, apiPath + "/admin/process/csv").permitAll()
+                    // All the rest
                     .anyRequest().hasAuthority("SCOPE_access"); // .anyRequest().authenticated()
             })
             // Indicate this is a Resource Server that accepts JWT tokens
