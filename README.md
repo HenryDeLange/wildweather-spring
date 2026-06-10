@@ -21,7 +21,7 @@ This project is a standard _Java_ _Spring Boot_ application that uses _Maven_ as
 
 ### Requirements
 
-- [Java JDK 25 Lite](https://bell-sw.com/pages/downloads/)
+- [Java JDK 26 Lite](https://bell-sw.com/pages/downloads/)
 - [Maven 3.9.9](https://maven.apache.org/)
 - [Encryption Keys](#encryption-keys)
 
