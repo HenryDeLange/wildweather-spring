@@ -21,8 +21,8 @@ public class ClimateServScheduler extends AbstractScheduler {
         super(NAME, CSV_PREFIX, api, 1);
     }
 
-    // Run at 4AM
-    @Scheduled(cron = "0 0 4 * * *")
+    // Run at 12AM
+    @Scheduled(cron = "0 0 0 * * *")
     void scheduledApiProcessing() {
         processApiData(false);
     }
